@@ -17,7 +17,7 @@ Remove the sandboxes created during the lab, along with everything inside them (
 
 ```bash
 sbx ls
-sbx rm quickstart fix-bugs add-search add-notif
+sbx rm quickstart fix-bugs add-search add-notif mcp
 ```
 
 `sbx rm` asks for confirmation (add `--force` to skip it). The sandbox created by `sbx run shell` in the network policies module is named after the folder you ran it from: remove it too, using the name shown by `sbx ls`. You can also remove all stopped sandboxes at once with `sbx prune`.

@@ -25,32 +25,46 @@ In this module you give your agent the **Docker Hardened Images (DHI)** MCP serv
     dhi    remote http   ready    LOCAL, managed by you
     ```
 
-3. Load it into your `quickstart` sandbox. No restart is needed:
+3. From the `project` directory, create a dedicated sandbox named `mcp`:
 
     ```bash
-    sbx mcp load dhi --sandbox quickstart
+    sbx create --name mcp --static-mcp none copilot .
     ```
 
-    You should see `Loaded MCP server dhi into sandbox quickstart`.
+    `--static-mcp none` starts the sandbox's MCP gateway with **no servers**, and without the discovery tools an agent could use to find and add servers by itself. You decide which servers it gets.
 
-4. In your agent session (or a new one, with `sbx run --name quickstart`), give the agent this prompt:
+4. Load the DHI server into the `mcp` sandbox:
+
+    ```bash
+    sbx mcp load dhi --sandbox mcp
+    ```
+
+    You should see `Loaded MCP server dhi into sandbox mcp`.
+
+5. Start an agent in the `mcp` sandbox:
+
+    ```bash
+    sbx run --name mcp
+    ```
+
+    Then give it this prompt:
 
     ```console
     Our backend image is python:3.12-slim (see backend/Dockerfile). Using the dhi MCP tools, in read-only mode (do not create or remove anything), find the Docker Hardened Image that matches it and how many known CVEs it has. At the end, list the tools you called.
     ```
 
-    The agent calls tools such as `dhi_get_repository` and `dhi_get_image_cves`, and suggests `dhi/python:3.12` along with its CVE count. If it says that it has no `dhi` tools, exit the session and reconnect.
+    The agent calls tools such as `dhi_get_repository` and `dhi_get_image_cves`, and suggests `dhi/python:3.12` along with its CVE count. If it says that it has no `dhi` tools, exit the session and run `sbx run --name mcp` again.
 
     > [!IMPORTANT]
     > The DHI server also has tools that change things (creating and removing mirrors in your Docker organization). That's why the prompt asks for read-only use: always check which tools an agent calls.
 
-5. Look at the sandbox's network activity:
+6. Exit the session (press **`Ctrl-C` twice**), then look at the sandbox's network activity:
 
     ```bash
-    sbx policy log quickstart
+    sbx policy log mcp
     ```
 
-    You won't find the DHI calls there, and you didn't add any network rule: the agent only talks to the gateway (`mcp-gateway.docker.internal`), and the gateway reaches the MCP server from outside the sandbox.
+    You'll find the Copilot and GitHub hosts, and the gateway itself (`mcp-gateway.docker.internal`, marked `<daemon-managed alias>`), but no request to the DHI server, and you didn't add any network rule: the agent only talks to the gateway, and the gateway reaches the MCP server from outside the sandbox.
 
 > [!WARNING]
 > Registering an MCP server is a trust decision. It runs outside the sandbox, with your host's permissions (local servers) or under the remote service's control, so the sandbox's network policy doesn't apply to it. Only register servers you trust.
