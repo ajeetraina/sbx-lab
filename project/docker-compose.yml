@@ -12,13 +12,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    ports:
-      - "5432:5432"
 
   backend:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql://devboard:devboard@db:5432/devboard
+      DATABASE_URL: postgresql+psycopg://devboard:devboard@db:5432/devboard
       SECRET_KEY: dev-secret-key-replace-in-prod
       ACCESS_TOKEN_EXPIRE_MINUTES: "60"
     ports:
@@ -26,6 +24,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
     volumes:
       - ./backend:/app
     restart: unless-stopped
@@ -37,7 +41,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     volumes:
       - ./frontend:/app
       - /app/node_modules

@@ -1,15 +1,23 @@
 Implement the issue search endpoint in backend/app/routers/issues.py.
 
-The endpoint is at GET /issues/search?q= and currently returns 501.
+The endpoint is GET /projects/{project_id}/issues/search?q= and currently returns 501.
 It should:
-- Accept a query string parameter `q`
-- Search issues by title and description using case-insensitive matching
-- Return the same schema as the list_issues endpoint
-- Pass the existing tests in backend/tests/test_issues.py
+- Require a query string parameter `q`
+- Return the issues of that project whose title OR description contains `q`,
+  using case-insensitive matching
+- Return a list of issues using the schema already declared on the route
+  (List[schemas.IssueOut])
+- Keep the existing project ownership check
+- Order the results with the most recently updated issues first
 
 Steps:
 1. Install dependencies: pip install -r backend/requirements.txt
 2. Read the existing list_issues() implementation for reference
-3. Implement the search using SQLAlchemy ilike: Issue.title.ilike(f"%{q}%") OR Issue.description.ilike(f"%{q}%")
-4. Run the test suite and confirm search tests pass
-5. Commit with a descriptive message
+3. Implement the search with SQLAlchemy, for example:
+   or_(Issue.title.ilike(f"%{q}%"), Issue.description.ilike(f"%{q}%"))
+4. In backend/tests/test_issues.py, remove the xfail marker from
+   test_search_finds_matching_issues so it runs as a regular test
+5. Run the tests: cd backend && pytest tests/ -v
+   The search test must pass. Other failing tests (pagination, updated_at) are
+   unrelated and being fixed separately: do not change them.
+6. Keep your changes limited to what search needs, then commit with a descriptive message

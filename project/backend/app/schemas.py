@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 # ── User ──────────────────────────────────────────────────────────────────────
@@ -19,8 +19,7 @@ class UserOut(BaseModel):
     username: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
@@ -56,8 +55,7 @@ class ProjectOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Issue ─────────────────────────────────────────────────────────────────────
@@ -90,8 +88,7 @@ class IssueOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Comment ───────────────────────────────────────────────────────────────────
@@ -108,8 +105,7 @@ class CommentOut(BaseModel):
     author_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Pagination ────────────────────────────────────────────────────────────────

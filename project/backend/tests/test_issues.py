@@ -1,9 +1,12 @@
 """
 Tests for the issues router.
 
-Several tests here are designed to expose known bugs in the implementation.
+Some tests here intentionally fail (or are marked xfail) until the known bugs and
+unfinished features of this demo app are fixed — they drive the lab exercises.
 Run these tests with:  pytest tests/test_issues.py -v
 """
+
+import pytest
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -103,7 +106,12 @@ def test_pagination_total_count(client, auth_headers, project):
 
 
 def test_pagination_second_page(client, auth_headers, project):
-    """Items on page 2 should be different from items on page 1."""
+    """
+    BUG TEST: page 2 should return the next page_size items, distinct from page 1.
+
+    With the bug (skip = page * page_size), page 2 of a 6-item list skips
+    everything and comes back empty.
+    """
     for i in range(6):
         _create_issue(client, auth_headers, project["id"], title=f"Issue {i}")
 
@@ -121,6 +129,10 @@ def test_pagination_second_page(client, auth_headers, project):
 
     page1_ids = {i["id"] for i in page1}
     page2_ids = {i["id"] for i in page2}
+    assert len(page1) == 3 and len(page2) == 3, (
+        f"Expected 3 items on each page but got {len(page1)} and {len(page2)}. "
+        "Hint: check the skip calculation in list_issues()."
+    )
     assert page1_ids.isdisjoint(page2_ids), (
         "Page 1 and page 2 contain overlapping items — pagination is broken."
     )
@@ -129,23 +141,16 @@ def test_pagination_second_page(client, auth_headers, project):
 # ── Search (not yet implemented) ──────────────────────────────────────────────
 
 
-def test_search_returns_501_until_implemented(client, auth_headers, project):
-    """Search endpoint should return 501 until the TODO is completed."""
-    resp = client.get(
-        f"/projects/{project['id']}/issues/search",
-        params={"q": "login"},
-        headers=auth_headers,
-    )
-    assert resp.status_code == 501
-
-
+@pytest.mark.xfail(
+    reason="Search is not implemented yet (the endpoint returns 501) — see prompts/implement-search.txt",
+    strict=False,
+)
 def test_search_finds_matching_issues(client, auth_headers, project):
     """
-    TODO TEST: Once search is implemented, this should pass.
+    TODO TEST: expected to fail until GET /projects/{id}/issues/search is implemented.
 
-    After completing the TODO in issues.py, the search endpoint should
-    return issues whose title or description contains the query string.
-    This test will FAIL until the TODO is implemented.
+    Once the endpoint is implemented this test starts passing (reported as XPASS);
+    remove the xfail marker above to turn it into a regular test.
     """
     _create_issue(client, auth_headers, project["id"], title="Login page crashes on Safari")
     _create_issue(client, auth_headers, project["id"], title="Dashboard layout broken")
@@ -155,12 +160,6 @@ def test_search_finds_matching_issues(client, auth_headers, project):
         params={"q": "login"},
         headers=auth_headers,
     )
-    # Will return 501 until implemented — change to assert resp.status_code == 200
-    # after completing the TODO.
-    if resp.status_code == 501:
-        import pytest
-        pytest.skip("Search not yet implemented — complete the TODO first")
-
     assert resp.status_code == 200
     results = resp.json()
     assert len(results) == 1
@@ -176,7 +175,7 @@ def test_updated_at_changes_on_update(client, auth_headers, project):
 
     With the bug (no onupdate= in the Column definition), the timestamp
     stays frozen at creation time. This test will FAIL until the model
-    is fixed to include onupdate=datetime.utcnow.
+    is fixed to include onupdate=utcnow.
     """
     import time
 
@@ -195,5 +194,5 @@ def test_updated_at_changes_on_update(client, auth_headers, project):
 
     assert new_updated_at != original_updated_at, (
         f"updated_at did not change after update: {original_updated_at} == {new_updated_at}. "
-        "Hint: add onupdate=datetime.utcnow to the updated_at Column in models.py."
+        "Hint: add onupdate=utcnow to the updated_at Column in models.py."
     )
