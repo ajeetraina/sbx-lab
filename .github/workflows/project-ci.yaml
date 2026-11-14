@@ -1,0 +1,63 @@
+name: project-ci
+
+# Smoke-tests the DevBoard sample app so a broken dependency bump (for example a
+# Dependabot PR) is caught before it ruins the lab. The backend test suite is not run
+# here on purpose: some tests fail by design, they are the lab exercises.
+on:
+  push:
+    branches: [main]
+    paths: ["project/**", ".github/workflows/project-ci.yaml"]
+  pull_request:
+    paths: ["project/**", ".github/workflows/project-ci.yaml"]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: project/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: project/backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: App imports and test suite starts
+        run: |
+          python -c "from app.main import app"
+          python -m pytest --collect-only -q
+      - name: Only the expected tests fail
+        run: |
+          python -m pytest -q -p no:cacheprovider 2>&1 | tee pytest.log || true
+          grep -E "^FAILED" pytest.log | sort > actual.txt
+          printf '%s\n' \
+            "FAILED tests/test_issues.py::test_pagination_first_page_returns_results" \
+            "FAILED tests/test_issues.py::test_pagination_second_page" \
+            "FAILED tests/test_issues.py::test_updated_at_changes_on_update" | sort > expected.txt
+          diff <(sed 's/ - .*//' actual.txt) expected.txt
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: project/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: project/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f project/docker-compose.yml config --quiet

@@ -1,16 +1,28 @@
 Implement email notifications in backend/app/services/notifications.py.
 
-The function send_status_change_notification() is currently a no-op stub.
+The coroutine send_status_change_notification() is currently a stub that only logs.
 It should:
-- Send an email to the issue reporter when an issue's status changes
-- Use the smtplib standard library (no new dependencies)
-- Read SMTP config from environment variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
-- Gracefully handle missing config (log a warning and return instead of crashing)
-- Include the issue title, old status, new status, and a link in the email body
+- Send an email to the issue reporter, and to the assignee when there is one and it
+  differs from the reporter, whenever an issue's status changes
+- Use the smtplib standard library (no new dependencies); since smtplib is blocking,
+  run it with asyncio.to_thread so the event loop is not blocked
+- Read the SMTP configuration from the environment variables SMTP_HOST, SMTP_PORT,
+  SMTP_USER and SMTP_PASS (SMTP_PORT defaults to 587)
+- Gracefully handle missing configuration: log a warning and return instead of crashing
+- Never let an SMTP failure break the API call: catch the error and log it
+- Include the issue title, the old status, the new status and a link in the email body.
+  Build the link from the FRONTEND_URL environment variable (default
+  http://localhost:3000) plus /projects/<project_id>. You may add an optional
+  project_id parameter and pass it from update_issue() in routers/issues.py.
 
 Steps:
-1. Read the existing stub and the update_issue() caller in routers/issues.py
+1. Read the existing stub and its caller, update_issue() in routers/issues.py
 2. Implement the function
-3. Add a unit test that mocks smtplib.SMTP and confirms send_message is called
-4. Run the test suite and confirm all tests pass
-5. Commit with a descriptive message
+3. Add unit tests in a NEW file, backend/tests/test_notifications.py (do not edit
+   existing test files). Mock smtplib.SMTP and confirm that send_message is called, and
+   that nothing is sent (and nothing crashes) when the SMTP configuration is missing.
+   pytest-asyncio is not installed: run the coroutine with asyncio.run().
+4. Run the tests: cd backend && pytest tests/ -v
+   Your new tests must pass. Other failing tests (pagination, updated_at) are
+   unrelated and being fixed separately: do not change them.
+5. Keep your changes limited to what notifications need, then commit with a descriptive message

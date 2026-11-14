@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Column,
@@ -12,6 +12,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from app.database import Base
+
+
+def utcnow() -> datetime:
+    """Current UTC time as a naive datetime (what the DateTime columns store)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -33,7 +39,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     projects = relationship("Project", back_populates="owner")
     reported_issues = relationship(
@@ -52,9 +58,9 @@ class Project(Base):
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    # BUG: missing onupdate — updated_at is never refreshed on UPDATE
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    # BUG: missing onupdate=utcnow — updated_at is never refreshed on UPDATE
+    updated_at = Column(DateTime, default=utcnow)
 
     owner = relationship("User", back_populates="projects")
     issues = relationship("Issue", back_populates="project", cascade="all, delete-orphan")
@@ -71,9 +77,9 @@ class Issue(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    # BUG: missing onupdate — updated_at is never refreshed on UPDATE
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    # BUG: missing onupdate=utcnow — updated_at is never refreshed on UPDATE
+    updated_at = Column(DateTime, default=utcnow)
 
     project = relationship("Project", back_populates="issues")
     reporter = relationship(
@@ -94,7 +100,7 @@ class Comment(Base):
     content = Column(Text, nullable=False)
     issue_id = Column(Integer, ForeignKey("issues.id"), nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     issue = relationship("Issue", back_populates="comments")
     author = relationship("User", back_populates="comments")
