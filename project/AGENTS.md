@@ -8,16 +8,28 @@ See [`README.md`](README.md) for how to run it.
 
 - **Never `git push` without explicit user confirmation.** Stage and commit when asked, then stop and ask before pushing.
 - Keep changes small and focused on the task you were given. Do not reformat or refactor unrelated code.
-- Never commit generated or local files: `*.db`, `.env`, `node_modules/`, `.next/`, `__pycache__/`.
+- Never commit generated or local files: `*.db`, `.env`, `node_modules/`, `.next/`, `__pycache__/`, `.venv/`.
+
+## Sandbox environment
+
+You are most likely running in a Docker Sandbox (a Linux microVM, user `agent`, with `sudo`). Its image has
+**no Python and no Node.js**, and the network is restricted by a policy (package registries are allowed).
+
+- Install Python once, before running any backend command:
+  `sudo apt-get update && sudo apt-get install -y python3 python3-venv python3-pip`
+- Create the virtual environment **outside the workspace** (the workspace is a folder shared with the host,
+  which must stay clean): `python3 -m venv ~/venv && ~/venv/bin/pip install -r backend/requirements.txt`
+- Run the tests with `cd backend && ~/venv/bin/pytest -v`
+- Docker and Docker Compose are available inside the sandbox. You do not need Node.js on the sandbox itself:
+  the frontend builds in its container.
 
 ## Commands
 
 | Task                  | Command                                                                  |
 |-----------------------|--------------------------------------------------------------------------|
-| Install backend deps  | `cd backend && pip install -r requirements.txt`                          |
-| Run backend tests     | `cd backend && pytest -v`                                                |
+| Run backend tests     | `cd backend && ~/venv/bin/pytest -v` (see *Sandbox environment* above)   |
 | Start the whole stack | `docker compose up --build -d` (from this directory)                     |
-| Build the frontend    | `cd frontend && npm ci && npm run build`                                 |
+| Build the frontend    | `cd frontend && npm ci && npm run build` (needs Node.js, or use Compose) |
 
 ## Conventions
 

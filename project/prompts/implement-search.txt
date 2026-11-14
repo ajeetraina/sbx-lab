@@ -1,4 +1,4 @@
-Implement the issue search endpoint in backend/app/routers/issues.py.
+Implement the issue search endpoint in project/backend/app/routers/issues.py.
 
 The endpoint is GET /projects/{project_id}/issues/search?q= and currently returns 501.
 It should:
@@ -11,13 +11,13 @@ It should:
 - Order the results with the most recently updated issues first
 
 Steps:
-1. Install dependencies: pip install -r backend/requirements.txt
+1. Set up the Python environment (see AGENTS.md)
 2. Read the existing list_issues() implementation for reference
 3. Implement the search with SQLAlchemy, for example:
    or_(Issue.title.ilike(f"%{q}%"), Issue.description.ilike(f"%{q}%"))
-4. In backend/tests/test_issues.py, remove the xfail marker from
+4. In project/backend/tests/test_issues.py, remove the xfail marker from
    test_search_finds_matching_issues so it runs as a regular test
-5. Run the tests: cd backend && pytest tests/ -v
+5. Run the tests: cd project/backend && ~/venv/bin/pytest tests/ -v
    The search test must pass. Other failing tests (pagination, updated_at) are
    unrelated and being fixed separately: do not change them.
 6. Keep your changes limited to what search needs, then commit with a descriptive message

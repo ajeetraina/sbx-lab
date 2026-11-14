@@ -2,9 +2,10 @@
 
 Each sandbox has its own private Docker daemon. Your agent can run `docker compose up`, build images, and start containers, and none of them appear in your host's `docker ps`.
 
-1. Reconnect to your sandbox from the `project` directory:
+1. Go back to the `project` directory (module 06 left you at the root of the repository) and reconnect to your sandbox:
 
     ```bash
+    cd project
     sbx run --name quickstart
     ```
 
@@ -41,7 +42,16 @@ Each sandbox has its own private Docker daemon. Your agent can run `docker compo
 
     Run `docker ps` in another terminal on your host: you won't see these containers there.
 
-4. **Leave the agent session open** (or exit it, the containers keep running) and move on to the next module to open the application in your browser.
+4. **Leave the agent session open** and move on to the next module in another terminal.
+
+    > [!IMPORTANT]
+    > A sandbox stops when no agent session is attached to it, and its containers and published ports go with it. If you exit the session (`Ctrl-C` twice), restart the sandbox without opening a new session:
+    >
+    > ```bash
+    > sbx run --detach --name quickstart
+    > ```
+    >
+    > The Compose services restart on their own within a few seconds, and published ports are restored.
 
 The containers your agent runs live entirely inside the sandbox. When you remove the sandbox with `sbx rm`, all its images, containers, and PostgreSQL data are deleted too.
 

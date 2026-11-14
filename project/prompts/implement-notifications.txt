@@ -1,4 +1,4 @@
-Implement email notifications in backend/app/services/notifications.py.
+Implement email notifications in project/backend/app/services/notifications.py.
 
 The coroutine send_status_change_notification() is currently a stub that only logs.
 It should:
@@ -13,16 +13,17 @@ It should:
 - Include the issue title, the old status, the new status and a link in the email body.
   Build the link from the FRONTEND_URL environment variable (default
   http://localhost:3000) plus /projects/<project_id>. You may add an optional
-  project_id parameter and pass it from update_issue() in routers/issues.py.
+  project_id parameter and pass it from update_issue() in project/backend/app/routers/issues.py.
 
 Steps:
-1. Read the existing stub and its caller, update_issue() in routers/issues.py
+1. Set up the Python environment (see AGENTS.md), then read the existing stub and its caller,
+   update_issue() in project/backend/app/routers/issues.py
 2. Implement the function
-3. Add unit tests in a NEW file, backend/tests/test_notifications.py (do not edit
+3. Add unit tests in a NEW file, project/backend/tests/test_notifications.py (do not edit
    existing test files). Mock smtplib.SMTP and confirm that send_message is called, and
    that nothing is sent (and nothing crashes) when the SMTP configuration is missing.
    pytest-asyncio is not installed: run the coroutine with asyncio.run().
-4. Run the tests: cd backend && pytest tests/ -v
+4. Run the tests: cd project/backend && ~/venv/bin/pytest tests/ -v
    Your new tests must pass. Other failing tests (pagination, updated_at) are
    unrelated and being fixed separately: do not change them.
 5. Keep your changes limited to what notifications need, then commit with a descriptive message
