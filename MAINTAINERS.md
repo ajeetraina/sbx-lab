@@ -19,7 +19,8 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 - `sbx run` infers the current directory: `sbx run claude`. Reconnect to an existing sandbox with `sbx run --name <sandbox-name>`.
 - Clone mode (`--clone`) exposes the clone as the Git remote `sandbox-<name>` (branches `sandbox-<name>/<branch>`); the fetch only works while the sandbox is running.
 - Multiple workspaces: the first path is the primary one (read-write); extra paths can be appended with `:ro` for read-only.
-- `sbx policy` subcommands: `allow`, `deny`, `check`, `init`, `log`, `ls`, `reset`, `rm` (also `approval`, `inspect`, `profile`, `refresh`). Non-interactive reset: `sbx policy reset --force && sbx policy init balanced`.
+- `sbx policy` subcommands: `allow`, `deny`, `check`, `init`, `log`, `ls`, `reset`, `rm` (also `approval`, `inspect`, `profile`, `refresh`). Non-interactive reset: `sbx policy reset --force && sbx policy init deny-all` (or `balanced`).
+- The lab runs with the **deny-all** policy plus the allow list in module 01 (*Allow only what the lab needs*). It was derived from `sbx policy log` of a full run (Copilot Enterprise; `**.githubcopilot.com` also covers the Individual and Business subdomains). If the lab starts using a new host (dependency, image, registry), add it there. A full run of modules 05-08 under this policy (`sbx` v0.53.0, Copilot Enterprise) had no blocked hosts other than Next.js telemetry, which Compose now disables.
 - Secrets are global by default; use `--sandbox <name>` to scope one. Global secrets are injected at sandbox creation time.
 - Copilot starts with `--yolo` by default; arguments after `--` are appended.
 - Services must listen on `0.0.0.0` (not `127.0.0.1`) for port forwarding to work.

@@ -39,6 +39,8 @@ services:
     build: ./frontend
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
+      # Avoids a blocked telemetry.nextjs.org request under the lab's locked-down network policy.
+      NEXT_TELEMETRY_DISABLED: "1"
     ports:
       - "3000:3000"
     depends_on:

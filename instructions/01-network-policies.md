@@ -8,6 +8,8 @@ Every sandbox routes outbound HTTP/HTTPS through a host-side proxy that enforces
 | Balanced    | Default deny, with a broad allow-list covering AI APIs, npm, pip, GitHub, registries |
 | Locked Down | Everything blocked; you explicitly allow what you need                               |
 
+In this lab you will use **Locked Down**, and allow only the hosts the exercises need.
+
 To view the existing policies, use the `sbx policy ls` command:
 
 ```bash
@@ -137,21 +139,21 @@ curl docker.com
 It should work now! Type `exit` to return to your host.
 
 > [!TIP]
-> You can allow multiple hosts in a single command or even use wildcards
+> You can allow several hosts in a single command, and use wildcards: `*.example.com` matches exactly one subdomain level (`api.example.com`), `**.example.com` matches any depth (`api.eu.example.com`). Neither matches `example.com` itself.
 >
-> ```bash no-copy-button no-run-button
-> # Allow multiple at once
+> ```bash
+> # Allow several hosts at once
 > sbx policy allow network "smtp.mailgun.org,api.sendgrid.com"
 >
-> # Allow all npm and PyPI (useful if your agent can't install packages)
-> sbx policy allow network "*.npmjs.org,*.pypi.org,files.pythonhosted.org"
+> # Allow every subdomain of npmjs.org, at any depth
+> sbx policy allow network "**.npmjs.org"
 > ```
 
 ## Block a host
 
 To explicitly block a host, use the `sbx policy deny` command:
 
-```bash terminal-id=host
+```bash
 sbx policy deny network ads.example.com
 ```
 
@@ -183,31 +185,57 @@ sbx policy allow network localhost:11434
 
 Then inside the sandbox, point your client at `host.docker.internal:11434`.
 
-## Set the `2. Balanced` network policies profile for the rest of the lab
+## Allow only what the lab needs
 
-Run this command to set the default:
+You will keep the **Locked Down** policy for the rest of the lab: rather than trusting a broad allow list, you allow exactly the hosts your agents need, and nothing else.
 
-```bash terminal-id=host
-sbx policy reset
+Add these three rules:
+
+```bash
+# GitHub and GitHub Copilot: the agent itself
+sbx policy allow network "github.com,**.github.com,**.githubcopilot.com"
+
+# Python for the backend tests: Debian packages and PyPI
+sbx policy allow network "deb.debian.org,dhi.io,pypi.org,files.pythonhosted.org"
+
+# The Docker Compose stack: Docker Hub images and npm packages
+sbx policy allow network "**.docker.io,production.cloudfront.docker.com,registry.npmjs.org"
 ```
 
-The CLI restarts the daemon, resets the policies, and shows the picker. Choose the **Balanced** option (default deny, with common development sites allowed).
+| Rule | Used by | Module |
+|------|---------|--------|
+| `github.com`, `**.github.com` | GitHub API, used by Copilot | all agent modules |
+| `**.githubcopilot.com` | Copilot service; the subdomain depends on your plan (`api.individual…`, `api.business…`, `api.enterprise…`), hence `**` | all agent modules |
+| `deb.debian.org`, `dhi.io` | Installing Python with `apt` in the sandbox (the sandbox image doesn't include it) | [05](05-run-in-direct-mode.md), [06](06-parallel-agents.md) |
+| `pypi.org`, `files.pythonhosted.org` | Installing the backend's Python packages | 05, 06, [07](07-docker-inside-the-sandbox.md) |
+| `**.docker.io`, `production.cloudfront.docker.com` | Pulling the `python`, `node` and `postgres` images from Docker Hub | 07 |
+| `registry.npmjs.org` | Installing the frontend's npm packages | 07 |
 
-> [!TIP]
-> Non-interactive equivalent: `sbx policy reset --force && sbx policy init balanced`.
+The hosts have no port suffix on purpose: `apt` downloads from Debian over HTTP (port 80).
 
-Check the configured policies:
+List the policies again: `local-policy` now has one network rule per host.
 
 ```bash
 sbx policy ls
 ```
 
-You should now see a much longer allow list (the exact number can vary with your `sbx` version):
-
 ```none
 POLICY             SOURCE   APPLIES TO   SUMMARY
 default-deny-all   local    all          network: deny when no rule decides
-local-policy       local    all          network: 195 allow; filesystem read: 1 allow; filesystem write: 1 allow
+local-policy       local    all          network: 10 allow; filesystem read: 1 allow; filesystem write: 1 allow
 ```
+
+Check a few of them:
+
+```bash
+sbx policy check network api.github.com
+sbx policy check network api.individual.githubcopilot.com
+sbx policy check network docker.com
+```
+
+The first two are `Allowed`; `docker.com` is still `Denied`, because you removed its rule above.
+
+> [!TIP]
+> If an agent later fails to download something, run `sbx policy log` to see the blocked host, then allow it with `sbx policy allow network <host>`.
 
 [[<< Previous: Prerequisites](00-prerequisites.md) | [Next >> Secrets and credentials](02-secrets-credentials.md)]
