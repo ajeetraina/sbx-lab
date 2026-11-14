@@ -4,11 +4,13 @@ Sandboxes are network-isolated: your browser can't reach a server running inside
 
 ## Forward the API
 
-1. With the Docker Compose stack from the previous module still running, run the following in a terminal on your host:
+1. With the Docker Compose stack from the previous module still running (the `quickstart` sandbox must be running: see `sbx ls`), run the following in a terminal on your host:
 
     ```bash
     sbx ports quickstart --publish 8000:8000
     ```
+
+    You should see `Published 127.0.0.1:8000 -> 8000/tcp4`.
 
 2. Open [http://localhost:8000/docs](http://localhost:8000/docs) to see the live Swagger UI served from inside the sandbox.
 
@@ -42,10 +44,8 @@ Sandboxes are network-isolated: your browser can't reach a server running inside
 
     ```console
     HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL
-    127.0.0.1   3001        3000           tcp
-    ::1         3001        3000           tcp
-    127.0.0.1   8000        8000           tcp
-    ::1         8000        8000           tcp
+    127.0.0.1   3001        3000           tcp4
+    127.0.0.1   8000        8000           tcp4
     ```
 
 2. To stop publishing a port, use the `--unpublish` flag:
@@ -58,6 +58,6 @@ Sandboxes are network-isolated: your browser can't reach a server running inside
 > Services inside the sandbox must listen on `0.0.0.0`, not `127.0.0.1`. Many development servers default to `127.0.0.1`, which is why the prompt in the previous module explicitly asks the agent to bind to `0.0.0.0`.
 
 > [!IMPORTANT]
-> Published ports don't survive a sandbox stop and restart. Run `sbx ports` again after restarting the sandbox.
+> Ports are only reachable while the sandbox is running. A sandbox stops when no agent session is attached, so keep your agent session open, or start it without a session with `sbx run --detach --name quickstart`. Published ports are restored when the sandbox restarts.
 
 [[<< Previous: Docker inside the sandbox](07-docker-inside-the-sandbox.md) | [Next >> Wrap up](09-wrap-up.md)]

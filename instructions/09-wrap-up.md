@@ -16,10 +16,10 @@ Remove the sandboxes created during the lab, along with everything inside them (
 
 ```bash
 sbx ls
-sbx rm quickstart fix-bugs add-search add-notif shell-sbx-lab
+sbx rm quickstart fix-bugs add-search add-notif
 ```
 
-Use the names shown by `sbx ls`: the sandbox created by `sbx run shell` in the network policies module is named after the folder you ran it from. You can also remove all stopped sandboxes at once with `sbx prune`.
+`sbx rm` asks for confirmation (add `--force` to skip it). The sandbox created by `sbx run shell` in the network policies module is named after the folder you ran it from: remove it too, using the name shown by `sbx ls`. You can also remove all stopped sandboxes at once with `sbx prune`.
 
 Your network policy is currently the **Balanced** profile, which is the recommended default. Check it with `sbx policy ls`.
 

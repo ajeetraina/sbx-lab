@@ -43,6 +43,8 @@ Every exercise depends on `sbx` running correctly on your computer. **Do not ski
     sbx diagnose
     ```
 
+    Each check is marked ✓ (passed), ✗ (failed) or ⊘ (skipped). The checks under **INSTALLATION**, **PLATFORM** and **CONNECTION** (daemon, virtualization, authentication, global network policy) must pass. A ✗ on an optional item, such as **SSH client config**, does not affect this lab and can be ignored.
+
 4. This lab assumes that your Docker account is **not** subject to organization AI Governance policies. Check the configured policies:
 
     ```bash

@@ -11,7 +11,14 @@ Everything in the previous module ran in **direct mode**: your agent edited your
 
 ### Single clone: working in isolation
 
-1. Make sure you are in the `project` directory and that no agent session is still attached to your terminal (press **`Ctrl-C` twice** to exit one).
+1. Go back to the **root of the repository** and make sure that no agent session is still attached to your terminal (press **`Ctrl-C` twice** to exit one):
+
+    ```bash
+    cd ..
+    ```
+
+    > [!IMPORTANT]
+    > Clone mode must be started from the root of the Git repository. From the `project` folder, `sbx` stops with the error `--clone requires a Git repository`. The agent therefore sees the whole repository, with the application in the `project/` folder.
 
 2. Start a new agent in clone mode with the `--clone` flag. Give it a name: it also names the Git remote that you will fetch from later.
 
@@ -24,7 +31,7 @@ Everything in the previous module ran in **direct mode**: your agent edited your
 3. Give your agent the following prompt to fix the last failing test:
 
     ```console
-    One test is still failing: test_updated_at_changes_on_update. The updated_at columns in backend/app/models.py are never refreshed when a row is updated. Fix the bug, run the tests to confirm it, and commit with a descriptive message.
+    One test is still failing: test_updated_at_changes_on_update. The updated_at columns in project/backend/app/models.py are never refreshed when a row is updated. Fix the bug, run the tests to confirm it, and commit with a descriptive message.
     ```
 
 4. Once the agent has finished, fetch its work from a **second terminal** on your host, in the same repository:
@@ -52,24 +59,24 @@ DevBoard has two unfinished features that make ideal parallel tasks:
 - **Search**: `GET /projects/{id}/issues/search?q=` returns `501`; the query logic needs to be written.
 - **Notifications**: `send_status_change_notification()` only logs; it should send emails when an issue's status changes.
 
-The [`prompts/`](../project/prompts) directory contains a ready-made prompt file for each.
+The [`project/prompts/`](../project/prompts) directory contains a ready-made prompt file for each.
 
 > [!TIP]
 > In Windows PowerShell 5.1 the prompt is passed with its line breaks flattened. It still works. For the exact formatting, use Git Bash or WSL.
 
-1. In a new terminal, from the `project` directory, start an agent that implements search:
+1. In a new terminal, from the root of the repository, start an agent that implements search:
 
     ```bash terminal-id=parallel-agent-1
-    sbx run copilot --clone --name add-search -- -i "$(cat prompts/implement-search.txt)"
+    sbx run copilot --clone --name add-search -- -i "$(cat project/prompts/implement-search.txt)"
     ```
 
     > [!IMPORTANT]
     > The `"$(cat ...)"` must be quoted, otherwise the prompt is not passed correctly to the agent.
 
-2. In another terminal, again from the `project` directory, start a second agent that implements notifications:
+2. In another terminal, again from the root of the repository, start a second agent that implements notifications:
 
     ```bash
-    sbx run copilot --clone --name add-notif -- -i "$(cat prompts/implement-notifications.txt)"
+    sbx run copilot --clone --name add-notif -- -i "$(cat project/prompts/implement-notifications.txt)"
     ```
 
 Each sandbox gets its own isolated Git clone, so the agents read and write completely separate copies of the code. You can see both in `sbx ls`, and watch each agent's progress in its own terminal. Copilot already runs with `--yolo` by default, so the agents don't wait for confirmation.
