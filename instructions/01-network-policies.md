@@ -189,7 +189,7 @@ Then inside the sandbox, point your client at `host.docker.internal:11434`.
 
 You will keep the **Locked Down** policy for the rest of the lab: rather than trusting a broad allow list, you allow exactly the hosts your agents need, and nothing else.
 
-Add these three rules:
+Add these four rules:
 
 ```bash
 # GitHub and GitHub Copilot: the agent itself
@@ -198,8 +198,11 @@ sbx policy allow network "github.com,**.github.com,**.githubcopilot.com"
 # Python for the backend tests: Debian packages and PyPI
 sbx policy allow network "deb.debian.org,dhi.io,pypi.org,files.pythonhosted.org"
 
-# The Docker Compose stack: Docker Hub images and npm packages
-sbx policy allow network "**.docker.io,production.cloudfront.docker.com,registry.npmjs.org"
+# Docker: pulling images from Docker Hub
+sbx policy allow network "**.docker.io,production.cloudfront.docker.com"
+
+# Node.js: installing the frontend's npm packages
+sbx policy allow network "registry.npmjs.org"
 ```
 
 | Rule | Used by | Module |
