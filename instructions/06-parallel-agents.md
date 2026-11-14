@@ -1,100 +1,125 @@
-# Clone mode and parallel agents
+# 🌿 Clone mode and parallel agents
 
 ## Direct mode vs. clone mode
 
-Everything in the previous section ran in **direct mode** — your agent edited your working tree and you could see the changes immediately. That's great for interactive work.
+Everything in the previous module ran in **direct mode**: your agent edited your working tree and you saw the changes immediately. That is great for interactive work.
 
-**Clone mode** gives your agent a private Git clone inside the sandbox, isolated from your main working tree. You keep working normally; the agent works in its own clone; you fetch the changes and review the diff before merging. Use it when you want a clean diff to review before anything lands, or when running multiple agents simultaneously.
+**Clone mode** gives your agent a private Git clone inside the sandbox, isolated from your working tree. You keep working normally while the agent works in its own clone. Afterwards you fetch its commits and review the diff before anything lands. Use it when you want a clean diff to review, or when you run several agents at the same time.
+
+> [!NOTE]
+> The clone starts from your **committed** code. Make sure the fix from the previous module is committed (`git log --oneline` should show it).
 
 ### Single clone: working in isolation
 
-1. If you are currently in the sandbox **press `ctrl-c` twice to exit**.
+1. Make sure you are in the `project` directory and that no agent session is still attached to your terminal (press **`Ctrl-C` twice** to exit one).
 
-2. Start a new agent session in clone mode by adding the `--clone` flag, and give it a name so you know which Git remote to fetch from later:
+2. Start a new agent in clone mode with the `--clone` flag. Give it a name: it also names the Git remote that you will fetch from later.
 
     ```bash
-    sbx run copilot --clone --name=fix-bugs
+    sbx run copilot --clone --name fix-bugs
     ```
 
-    The agent works inside a private Git clone. Your working tree is mounted read-only — the agent can read your code but cannot modify your files directly.
+    The agent works inside a private Git clone, and your own working tree is only available to it read-only.
 
-3. Give your agent the following prompt to fix the last broken test:
+3. Give your agent the following prompt to fix the last failing test:
 
     ```console
-    One test is still failing after the direct-mode fix. The updated_at field in backend/app/models.py never changes on update. Fix the bug and commit with a descriptive message.
+    One test is still failing: test_updated_at_changes_on_update. The updated_at columns in backend/app/models.py are never refreshed when a row is updated. Fix the bug, run the tests to confirm it, and commit with a descriptive message.
     ```
 
-4. Once the agent finishes, retrieve its work from a second terminal by fetching from the sandbox remote:
+4. Once the agent has finished, fetch its work from a **second terminal** on your host, in the same repository:
 
-    ```bash terminal-id=host
+    ```bash
     git fetch sandbox-fix-bugs
-    git log HEAD..FETCH_HEAD --oneline
+    git log HEAD..sandbox-fix-bugs/main --oneline
     ```
 
-    The sandbox exposes its clone as a Git remote named `sandbox-<name>`. Review the commits, then
-    merge or cherry-pick as you normally would.
+    The sandbox exposes its clone as a Git remote named `sandbox-<name>`, and its branches are named `sandbox-<name>/<branch>`, where `<branch>` is the branch that was checked out when the sandbox was created (typically `main`). Review the commits, then merge or cherry-pick them as you normally would:
+
+    ```bash
+    git merge sandbox-fix-bugs/main
+    ```
+
+    > [!NOTE]
+    > The fetch only works while the sandbox is running. If you get a connection error, restart it with `sbx run --name fix-bugs`.
 
 ### Parallel agents
 
-Because each clone-mode sandbox has its own private Git clone, you can run multiple agents simultaneously with no conflicts. The key is giving each sandbox a distinct `--name` and passing each agent its task up front via a prompt file — this lets both fire off without any interactive back-and-forth.
+Because each clone-mode sandbox has its own private Git clone, you can run several agents at the same time without conflicts. The key is to give each sandbox a distinct `--name` and to hand each agent its task up front through a prompt file, so that both can start without any back-and-forth.
 
-DevBoard has two unimplemented features that make ideal parallel tasks:
+DevBoard has two unfinished features that make ideal parallel tasks:
 
-- **Search** — `GET /issues/search?q=` returns 501; the query logic needs to be written
-- **Notifications** — `send_status_change_notification()` is a no-op stub; it needs to actually send emails on issue status changes
+- **Search**: `GET /projects/{id}/issues/search?q=` returns `501`; the query logic needs to be written.
+- **Notifications**: `send_status_change_notification()` only logs; it should send emails when an issue's status changes.
 
-The `prompts/` directory in this repo includes a ready-made prompt file for each.
+The [`prompts/`](../project/prompts) directory contains a ready-made prompt file for each.
 
-1. Start one agent in a new terminal, giving it the prompt to implement search (the specification is provided in the `prompts` directory):
+> [!TIP]
+> In Windows PowerShell 5.1 the prompt is passed with its line breaks flattened. It still works. For the exact formatting, use Git Bash or WSL.
+
+1. In a new terminal, from the `project` directory, start an agent that implements search:
 
     ```bash terminal-id=parallel-agent-1
-    sbx run copilot --clone --name add-search -- --yolo -i "$(cat prompts/implement-search.txt)"
+    sbx run copilot --clone --name add-search -- -i "$(cat prompts/implement-search.txt)"
     ```
 
-    > **Note**: the `"$(cat ...)"` must be quoted or the prompt won't be passed correctly
-    > to the sandbox.
+    > [!IMPORTANT]
+    > The `"$(cat ...)"` must be quoted, otherwise the prompt is not passed correctly to the agent.
 
-2. Launch a second agent in another terminal to implement notifications, giving it its specification:
+2. In another terminal, again from the `project` directory, start a second agent that implements notifications:
 
-    ```bash terminal-id=parallel-agent-2
-    sbx run copilot --clone --name=add-notif -- --yolo -i "$(cat prompts/implement-notifications.txt)"
+    ```bash
+    sbx run copilot --clone --name add-notif -- -i "$(cat prompts/implement-notifications.txt)"
     ```
 
-Each sandbox gets its own isolated Git clone, so they read and write completely separate copies of the code with no conflicts. You'll see both sandboxes in `sbx ls`.
+Each sandbox gets its own isolated Git clone, so the agents read and write completely separate copies of the code. You can see both in `sbx ls`, and watch each agent's progress in its own terminal. Copilot already runs with `--yolo` by default, so the agents don't wait for confirmation.
 
-Each agent reads its prompt and gets to work independently. You can watch each agent's progress in its own terminal. When they finish, retrieve each agent's work:
+When both agents report that they are done, fetch their work from a terminal on your host:
 
-```bash terminal-id=host
+```bash
 git fetch sandbox-add-search
 git fetch sandbox-add-notif
 ```
 
 ### Reviewing and merging agent work
 
-After fetching, each agent's commits are available as remote-tracking branches — the same model as working with `origin`. The branch name is `sandbox-<name>/<branch>`, where `<branch>` is whatever was checked out when the sandbox was created (typically `main`).
+After fetching, each agent's commits are available as remote-tracking branches, the same model as working with `origin`.
 
 1. Inspect what each agent committed before merging anything:
 
-    ```bash terminal-id=host
+    ```bash
     git log HEAD..sandbox-add-search/main --oneline
+    git diff HEAD...sandbox-add-search/main --stat
     ```
-    And the notification task:
 
-    ```bash terminal-id=host
+    And the same for the notifications task:
+
+    ```bash
     git log HEAD..sandbox-add-notif/main --oneline
+    git diff HEAD...sandbox-add-notif/main --stat
     ```
 
 2. Merge each agent's branch into your working branch:
 
-    ```bash terminal-id=host
+    ```bash
     git merge sandbox-add-search/main
     git merge sandbox-add-notif/main
     ```
 
-    If both agents touched the same files you may get a merge conflict — resolve it as you would
-    any other merge, then `git merge --continue`.
+    If both agents changed the same files you may get a merge conflict. Resolve it as you would any other conflict, then run `git merge --continue`.
 
-    > **Tip**: Prefer reviewing one agent's diff before merging the second. Running
-    > `git diff sandbox-add-search/main` shows exactly what will change before you commit to it.
+3. Check that the merged result works. Reconnect to your `quickstart` sandbox, whose workspace is your working tree:
 
-[[Run in direct mode << Previous](05-run-in-direct-mode.md) | [Next >> Docker inside the sandbox](07-docker-inside-the-sandbox.md)]
+    ```bash
+    sbx run --name quickstart
+    ```
+
+    Then give the agent this prompt:
+
+    ```console
+    Run the full test suite and report the results.
+    ```
+
+    All the tests should now pass, including the search test and the new notification tests. Exit the session with **`Ctrl-C` twice**.
+
+[[<< Previous: Run in direct mode](05-run-in-direct-mode.md) | [Next >> Docker inside the sandbox](07-docker-inside-the-sandbox.md)]

@@ -1,0 +1,18 @@
+# 🛟 Troubleshooting
+
+Run `sbx diagnose` first: it checks the most common installation problems.
+
+| Problem | Solution |
+|---------|----------|
+| `sbx create` fails because the sandbox name already exists | Remove the old sandbox with `sbx rm <name>` (see the names with `sbx ls`), then create it again. |
+| The agent can't install packages or reach a website | Check `sbx policy ls`, then `sbx policy log` to see which hosts were blocked. Allow what is needed with `sbx policy allow network <host>`, or use the **Network** panel of the TUI (`sbx`, then `Tab`). |
+| `sbx policy ls` shows policies whose `SOURCE` is not `local` | Your organization manages your sandbox policies and some exercises may be blocked. Use a personal Docker account or ask your administrator. |
+| The agent can't authenticate to GitHub or Copilot | Run `gh auth status`, then store the secrets again **before** creating the sandbox (see [Secrets and credentials](02-secrets-credentials.md)). Global secrets are injected at creation time, so recreate the sandbox if you added them afterwards. |
+| `git fetch sandbox-<name>` fails | The sandbox must be running. Start it again with `sbx run --name <name>`, then fetch. |
+| `git merge` refuses to run because of local changes | Commit your changes first (`git add -A && git commit`). |
+| The browser can't open the app on `localhost:3001` or `localhost:8000` | Check that the stack is still running in the sandbox (`docker ps` from the agent), that the ports are published (`sbx ports quickstart`), and that the servers listen on `0.0.0.0`. Published ports are lost when a sandbox restarts. |
+| Docker Compose in the sandbox is slow the first time | It has to pull images and install dependencies. Subsequent runs are much faster. |
+
+Still stuck? [Open an issue](https://github.com/mathieu-benoit/sbx-lab/issues) and include the output of `sbx version` and `sbx diagnose`.
+
+[[Home](../README.md)]

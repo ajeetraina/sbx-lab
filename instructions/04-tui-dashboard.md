@@ -1,8 +1,8 @@
 # 💻 The interactive TUI dashboard
 
-Running `sbx` with no arguments opens the TUI (Terminal User Interface). 
+Running `sbx` with no arguments opens the TUI (Terminal User Interface).
 
-1. Open the TUI by running the following command outside of the sandbox:
+1. Open the TUI by running the following command on your host, outside of any sandbox:
 
     ```bash
     sbx
@@ -10,7 +10,7 @@ Running `sbx` with no arguments opens the TUI (Terminal User Interface).
 
     The dashboard shows all sandboxes as cards with live CPU and memory usage.
 
-The following table displays a few useful keyboard shortcuts:
+Here are a few useful keyboard shortcuts:
 
 | Key     | Action                                               |
 |---------|------------------------------------------------------|
@@ -29,4 +29,4 @@ The **Network panel** (press `Tab`) shows a live log of every outbound connectio
 > [!TIP]
 > While you can use the keyboard to navigate around the TUI, it also has full mouse support!
 
-[[First sandbox << Previous](03-first-sandbox.md) | [Next >> Run in direct mode](05-run-in-direct-mode.md)]
+[[<< Previous: First sandbox](03-first-sandbox.md) | [Next >> Run in direct mode](05-run-in-direct-mode.md)]

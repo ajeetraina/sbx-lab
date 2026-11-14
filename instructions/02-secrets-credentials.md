@@ -1,8 +1,8 @@
 # 🔑 Secrets and credentials
 
-`sbx` has a built-in secrets manager that stores credentials in your OS keychain — never in plain text on disk or inside the VM. When your agent makes an outbound request that needs authentication, the host-side proxy intercepts it and injects the credential automatically. Your agent can make authenticated API calls but can never read, log, or exfiltrate the raw credential.
+`sbx` has a built-in secrets manager that stores credentials in your OS keychain, never in plain text on disk or inside the VM. When your agent makes an outbound request that needs authentication, the host-side proxy intercepts it and injects the credential automatically. Your agent can make authenticated API calls but can never read, log, or exfiltrate the raw credential.
 
-1. Store your GitHub token **now**, before creating a sandbox. The `-g` flag makes it global — available to all sandboxes you create:
+1. Store your GitHub token **now**, before creating a sandbox. Secrets are **global** by default, which means they are available to every sandbox you create. Here the token is resolved from the GitHub CLI each time it is needed:
 
     ```bash
     sbx secret set github --command 'gh auth token'
@@ -10,20 +10,23 @@
     ```
 
     > [!IMPORTANT]
-    > Global secrets must be set before a sandbox is created. They are injected at creation time and cannot be added retroactively to a running sandbox. Sandbox-scoped secrets (without `-g`) can be added at any time and override the global value for that sandbox.
+    > Global secrets are injected when a sandbox is **created**; they cannot be added retroactively to an existing sandbox. A sandbox-scoped secret (set with `--sandbox <name>`) can be added at any time and takes precedence over the global value for that sandbox.
 
-2. Ensure the credential was added with the `sbx secret ls` command:
+    > [!NOTE]
+    > `gh auth token` requires that you are signed in with `gh auth login` and that the account has access to GitHub Copilot (see the [prerequisites](00-prerequisites.md)). You can also run `sbx secret set github` without `--command` to be prompted for a token instead.
+
+2. Check that the credentials were stored with the `sbx secret ls` command:
 
     ```bash
     sbx secret ls
     ```
 
-    You should see something like: 
+    You should see something like this (secret values are never displayed):
 
-    ```
-    SCOPE      SERVICE   SECRET
-    (global)   github    gho_TK421****...****R2D2
-    (global)   copilot   gho_TK421****...****R2D2
+    ```none
+    SCOPE      TYPE      NAME      SECRET
+    (global)   service   github    (stored)
+    (global)   service   copilot   (stored)
     ```
 
-[[Network policies << Previous](01-network-policies.md) | [Next >> First Sandbox](03-first-sandbox.md)]
+[[<< Previous: Network policies](01-network-policies.md) | [Next >> First sandbox](03-first-sandbox.md)]

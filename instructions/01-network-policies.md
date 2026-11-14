@@ -8,7 +8,7 @@ Every sandbox routes outbound HTTP/HTTPS through a host-side proxy that enforces
 | Balanced    | Default deny, with a broad allow-list covering AI APIs, npm, pip, GitHub, registries |
 | Locked Down | Everything blocked; you explicitly allow what you need                               |
 
-To view the existing rules, use the `sbx policy ls` command:
+To view the existing policies, use the `sbx policy ls` command:
 
 ```bash
 sbx policy ls
@@ -22,7 +22,10 @@ Run this command to set the default:
 sbx policy reset
 ```
 
-The CLI restarts the daemon, resets policies, and shows the picker, choose the `3. Locked Down  — All network traffic blocked unless you allow it.` option.
+The CLI restarts the daemon, resets the policies, and shows a picker. Choose the **Locked Down** option (all network traffic is blocked unless you allow it).
+
+> [!TIP]
+> To do the same without the interactive picker, run `sbx policy reset --force && sbx policy init deny-all`.
 
 Check the configured policies:
 
@@ -38,7 +41,7 @@ You should now see this:
   local-policy       local    all          filesystem read: 1 allow; filesystem write: 1 allow
 ```
 
-Try to reach `docker.com`:
+Check whether `docker.com` is reachable under this policy:
 
 ```bash
 sbx policy check network docker.com
@@ -53,7 +56,7 @@ You will see this message:
     Reason:      no matching allow rule (default deny)
 ```
 
-Run a simple Sandbox:
+Run a simple sandbox with a shell (the first start can take a minute):
 
 ```bash
 sbx run shell
@@ -71,13 +74,13 @@ You will see this message:
 Approval required for docker.com:80.
 ```
 
-Exit this sandbox to return on your host:
+Exit this sandbox to return to your host:
 
 ```bash
 exit
 ```
 
-## See what the sandbox is actually hitting
+## See what the sandbox is hitting
 
 To view a list of the hosts that were allowed or blocked by the proxy, use the `sbx policy log` command:
 
@@ -99,13 +102,13 @@ Adding the `--json` flag will output the log details in a machine-readable JSON 
 
 As you can see, the list of allowed hosts is small to begin with. However, it is easy to modify the list.
 
-Use the `sbx policy allow network` command to allow communication with docker.com:
+Use the `sbx policy allow network` command to allow communication with `docker.com`:
 
 ```bash
 sbx policy allow network docker.com
 ```
 
-Try to reach `docker.com`:
+Check `docker.com` again:
 
 ```bash
 sbx policy check network docker.com
@@ -119,19 +122,19 @@ You will see this message:
     Context:     global
 ```
 
-Run to the Sandbox:
+Reconnect to the sandbox:
 
 ```bash
 sbx run shell
 ```
 
-Once in the sandbox, try to reach `docker.com` from there:
+Once in the sandbox, try to reach `docker.com` again:
 
 ```bash
 curl docker.com
 ```
 
-It should work now!
+It should work now! Type `exit` to return to your host.
 
 > [!TIP]
 > You can allow multiple hosts in a single command or even use wildcards
@@ -146,7 +149,7 @@ It should work now!
 
 ## Block a host
 
-To specifically block a host, use the `sbx policy deny` command:
+To explicitly block a host, use the `sbx policy deny` command:
 
 ```bash terminal-id=host
 sbx policy deny network ads.example.com
@@ -154,25 +157,25 @@ sbx policy deny network ads.example.com
 
 ## Removing custom policies
 
-Each policy statement you define manually is stored as a separate policy statement. To remove them, use the `sbx policy rm` command:
+Each rule you define manually is stored separately. To remove them, use the `sbx policy rm` command:
 
-1. Remove the allow rule for example.com with the following command:
+1. Remove the allow rule for `docker.com`:
 
-```bash
-sbx policy rm network --resource example.com
-```
+    ```bash
+    sbx policy rm network --resource docker.com
+    ```
 
-2. Remove the deny rule for ads.example.com with the following command:
+2. Remove the deny rule for `ads.example.com`:
 
-```bash
-sbx policy rm network --resource ads.example.com
-```
+    ```bash
+    sbx policy rm network --resource ads.example.com
+    ```
 
 ## Reaching host services from inside the sandbox
 
-If you have a service running on your host machine (e.g. a local Ollama instance or a database), you can't reach it via `localhost` from inside the sandbox, as it resolves to the VM itself. 
+If you have a service running on your host machine (for example a local Ollama instance or a database), you can't reach it via `localhost` from inside the sandbox, because `localhost` there is the sandbox itself.
 
-Use `host.docker.internal` instead, and add a policy rule if needed:
+Use `host.docker.internal` instead, and add a policy rule if needed. You don't need to run this command for the lab:
 
 ```bash
 sbx policy allow network localhost:11434
@@ -188,7 +191,10 @@ Run this command to set the default:
 sbx policy reset
 ```
 
-The CLI restarts the daemon, resets policies, and shows the picker, choose the `2. Balanced   default deny, with common dev sites allowed` option.
+The CLI restarts the daemon, resets the policies, and shows the picker. Choose the **Balanced** option (default deny, with common development sites allowed).
+
+> [!TIP]
+> Non-interactive equivalent: `sbx policy reset --force && sbx policy init balanced`.
 
 Check the configured policies:
 
@@ -196,12 +202,12 @@ Check the configured policies:
 sbx policy ls
 ```
 
-You should now see this:
+You should now see a much longer allow list (the exact number can vary with your `sbx` version):
 
 ```none
-    POLICY             SOURCE   APPLIES TO   SUMMARY
-    default-deny-all   local    all          network: deny when no rule decides
-    local-policy       local    all          network: 195 allow; filesystem read: 1 allow; filesystem write: 1 allow
+POLICY             SOURCE   APPLIES TO   SUMMARY
+default-deny-all   local    all          network: deny when no rule decides
+local-policy       local    all          network: 195 allow; filesystem read: 1 allow; filesystem write: 1 allow
 ```
 
-[[Prerequisites << Previous](00-prerequisites.md) | [Next >> Secrets and credentials](02-secrets-credentials.md)]
+[[<< Previous: Prerequisites](00-prerequisites.md) | [Next >> Secrets and credentials](02-secrets-credentials.md)]

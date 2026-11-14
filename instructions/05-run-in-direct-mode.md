@@ -1,8 +1,8 @@
-# Running in direct mode
+# ⚡ Running in direct mode
 
-This exercise shows your agent working in **direct mode** — the default, where edits land in your working tree. You'll have your agent run the test suite, identify failures, fix the bugs, and confirm everything passes.
+In this exercise your agent works in **direct mode**, the default, where its edits land straight in your working tree. You will have it run the test suite, diagnose the failures, fix a bug, and confirm that the tests pass.
 
-1. Reconnect to your sandbox:
+1. Reconnect to your sandbox from the `project` directory:
 
     ```bash
     sbx run --name quickstart
@@ -20,35 +20,54 @@ This exercise shows your agent working in **direct mode** — the default, where
     Use pytest with verbose output: cd backend && pytest tests/ -v
     ```
 
-    It will take about 3-4 minutes for this to all complete. 
+    This takes about 3-4 minutes. You should see **3 failing tests**, **1 expected failure (`xfail`)**, and all the others passing:
 
-3. Instruct your agent to fix the tests by giving it the following prompt:
+    | Test                                         | Status  | Cause                                       |
+    |----------------------------------------------|---------|---------------------------------------------|
+    | `test_pagination_first_page_returns_results` | failing | pagination bug                              |
+    | `test_pagination_second_page`                | failing | same pagination bug                         |
+    | `test_updated_at_changes_on_update`          | failing | `updated_at` never refreshed (next module)  |
+    | `test_search_finds_matching_issues`          | xfail   | search not implemented yet (next module)    |
+
+3. Ask your agent to fix the pagination bug by giving it the following prompt:
 
     ```console
-    Two tests are failing due to a pagination bug. Fix it:
+    Two tests are failing because of a pagination bug. Fix it:
 
-    1. test_pagination_first_page_returns_results — the pagination offset is wrong
-    2. test_pagination_second_page — related to the same bug
+    1. test_pagination_first_page_returns_results
+    2. test_pagination_second_page
 
     For each fix:
     - Explain what the bug is and why it causes the failure
     - Show the diff of your change
-    - Re-run the specific test to confirm it passes before moving on
+    - Re-run the specific test to confirm that it passes before moving on
     ```
 
-    While your agent works, you can open the affected files in your editor on the host. 
-    You'll see the agent's edits — the workspace mount is bidirectional and instant. No copy step, no polling delay.
+    While your agent works, open the affected file (`backend/app/routers/issues.py`) in your editor on the host. You will see the agent's edits appear: the workspace mount is bidirectional and instant, with no copy step and no polling delay.
 
-4. Confirm these tests pass by giving your agent the following prompt:
+4. Confirm the result by giving your agent the following prompt:
 
     ```console
-    Run the full test suite and confirm the two updated tests pass (or are intentionally skipped).
+    Run the full test suite and report the results.
     ```
 
-    Note that the `test_updated_at_changes_on_update` is still going to fail, but that'll be fixed in a moment.
+    The two pagination tests now pass. `test_updated_at_changes_on_update` still fails (and the search test is still an expected failure): you will deal with those in the next module.
+
+5. Exit the agent session (press **`Ctrl-C` twice**) and review the change on your host:
+
+    ```bash
+    git status
+    git diff
+    ```
+
+    Then commit it. The next module starts agents from your *committed* code, so this fix must be committed:
+
+    ```bash
+    git add -A
+    git commit -m "Fix pagination offset in list_issues"
+    ```
 
 > [!IMPORTANT]
-> Installed packages **persist** across agent restarts for this sandbox. If you stop
-> and reconnect to `quickstart`, you won't need to `pip install` again.
+> Installed packages **persist** across agent restarts for this sandbox. If you stop and reconnect to `quickstart`, you won't need to run `pip install` again.
 
-[[TUI dashboard << Previous](04-tui-dashboard.md) | [Next >> Parallel agents](06-parallel-agents.md)]
+[[<< Previous: TUI dashboard](04-tui-dashboard.md) | [Next >> Clone mode and parallel agents](06-parallel-agents.md)]

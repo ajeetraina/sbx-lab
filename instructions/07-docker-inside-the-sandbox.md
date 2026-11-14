@@ -1,12 +1,11 @@
 # 🐳 Docker inside the sandbox
 
-Each sandbox has its own private Docker daemon. Your agent can run `docker compose up`,
-build images, and start containers — none of which appear in your host's `docker ps`.
+Each sandbox has its own private Docker daemon. Your agent can run `docker compose up`, build images, and start containers, and none of them appear in your host's `docker ps`.
 
-1. Back in the default terminal, if necessary, reconnect to your sandbox:
+1. Reconnect to your sandbox from the `project` directory:
 
-    ```bash terminal-id=default
-    sbx run quickstart
+    ```bash
+    sbx run --name quickstart
     ```
 
 2. Give your agent the following prompt:
@@ -23,25 +22,27 @@ build images, and start containers — none of which appear in your host's `dock
     Make sure all servers bind to 0.0.0.0 so I can reach them via port forwarding.
     ```
 
-    You will see your agent run `docker compose up --build -d`, wait for the `db` healthcheck to pass,
-    then hit the API endpoints with `curl` or `httpx`.
+    You will see your agent run `docker compose up --build -d`, wait for the database and backend health checks to pass, then call the API endpoints with `curl` or `httpx`. The first run pulls images and installs the frontend dependencies, so it can take a few minutes.
 
-3. From inside the agent's interface, you can see the running containers in the sandbox:
+3. From inside the agent session, list the running containers:
 
     ```bash
-    ! docker ps
+    !docker ps
     ```
 
-    Running that should give you output similar to the following:
+    The output looks similar to this:
 
-    ```console no-copy-button no-run-button
-      ⎿  CONTAINER ID   IMAGE                COMMAND                  CREATED              STATUS                        PORTS                                          NAMES                                                                                                 
-          a74c644a575f   fix-bugs-frontend    "docker-entrypoint.s…"   About a minute ago   Up About a minute             0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp   fix-bugs-frontend-1                                                                 
-          046609163f75   fix-bugs-backend     "uvicorn app.main:ap…"   About a minute ago   Up About a minute             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp   fix-bugs-backend-1
-          f8c2988853b3   postgres:16-alpine   "docker-entrypoint.s…"   About a minute ago   Up About a minute (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp   fix-bugs-db-1
-     ```
+    ```console
+    CONTAINER ID   IMAGE                COMMAND                  CREATED         STATUS                   PORTS                                         NAMES
+    a74c644a575f   project-frontend     "docker-entrypoint.s…"   2 minutes ago   Up 2 minutes             0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp   project-frontend-1
+    046609163f75   project-backend      "uvicorn app.main:ap…"   2 minutes ago   Up 2 minutes (healthy)   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp   project-backend-1
+    f8c2988853b3   postgres:16-alpine   "docker-entrypoint.s…"   2 minutes ago   Up 2 minutes (healthy)   5432/tcp                                      project-db-1
+    ```
 
-The containers your agent runs live entirely inside the sandbox. When you `sbx rm` the
-sandbox, all images, containers, and Postgres data are deleted automatically.
+    Run `docker ps` in another terminal on your host: you won't see these containers there.
 
-[[Parallel agents << Previous](06-parallel-agents.md) | [Next >> Port forwarding](08-port-forwarding.md)]
+4. **Leave the agent session open** (or exit it, the containers keep running) and move on to the next module to open the application in your browser.
+
+The containers your agent runs live entirely inside the sandbox. When you remove the sandbox with `sbx rm`, all its images, containers, and PostgreSQL data are deleted too.
+
+[[<< Previous: Clone mode and parallel agents](06-parallel-agents.md) | [Next >> Port forwarding](08-port-forwarding.md)]
