@@ -42,13 +42,13 @@ In this module you give your agent the **Docker Hardened Images (DHI)** MCP serv
     Then give it this prompt:
 
     ```console
-    Our backend image is python:3.12-slim (see backend/Dockerfile). Using the dhi MCP tools, in read-only mode (do not create or remove anything), find the Docker Hardened Image that matches it and how many known CVEs it has. At the end, list the tools you called.
+    For both the frontend and the backend app, from their Dockerfiles, find the Docker Hardened Image that matches it and how many known CVEs it has. At the end, list the tools you called.
     ```
 
-    The agent calls tools such as `dhi_get_repository` and `dhi_get_image_cves`, and suggests `dhi/python:3.12` along with its CVE count. If it says that it has no `dhi` tools, see [Troubleshooting](troubleshooting.md).
+    The agent reads both Dockerfiles, calls `dhi` tools such as `dhi_get_repository`, and suggests `dhi.io/python:3.12` for the backend and `dhi.io/node:22-alpine` for the frontend, each with its CVE count. If it says that it has no `dhi` tools, see [Troubleshooting](troubleshooting.md).
 
     > [!IMPORTANT]
-    > The DHI server also has tools that change things (creating and removing mirrors in your Docker organization). That's why the prompt asks for read-only use: always check which tools an agent calls.
+    > The DHI server also has tools that change things (creating and removing mirrors in your Docker organization). The prompt only asks the agent to look things up, and to list the tools it called: check that list.
 
 5. Exit the session (press **`Ctrl-C` twice**), then look at the sandbox's network activity:
 

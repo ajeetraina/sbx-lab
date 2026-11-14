@@ -31,7 +31,7 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 
 - Remote MCP servers (`--url https://...`) work in local sandboxes and can be loaded live with `sbx mcp load NAME --sandbox SANDBOX`; their tools show up directly in the agent's tool list. Module 09 creates a dedicated `mcp` sandbox with `--static-mcp dhi` (gateway with exactly that server and no discovery tools): tested end to end. Loading into a `--static-mcp none` sandbox with `sbx mcp load` also works.
 - Image servers (`--url dhi.io/fetch-mcp:latest`) did not work: `sbx mcp load` fails with `409 ... has no control-plane MCP gateway; cannot add a remote server live`, and with `--static-mcp` the gateway starts with no backend. `--local` and `--command docker ...` servers need Docker on the host, which the lab doesn't require. Hence the remote DHI server in module 09.
-- The DHI MCP server also exposes write tools (`dhi_create_mirror`, `dhi_remove_mirror`); the module's prompt asks for read-only use.
+- The DHI MCP server also exposes write tools (`dhi_create_mirror`, `dhi_remove_mirror`); the module's prompt only asks for look-ups and for the list of tools called (in the test, the agent used only `dhi_get_tag_definition` and `dhi_get_repository`).
 - Registration with a fresh account (`sbx mcp add dhi --url https://dhi.io/mcp`, browser sign-in) was not re-tested: the test machine already had it registered.
 
 ## Roadmap ideas
