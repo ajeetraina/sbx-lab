@@ -18,7 +18,7 @@ services:
   backend:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql://devboard:devboard@db:5432/devboard
+      DATABASE_URL: postgresql+psycopg://devboard:devboard@db:5432/devboard
       SECRET_KEY: dev-secret-key-replace-in-prod
       ACCESS_TOKEN_EXPIRE_MINUTES: "60"
     ports:
