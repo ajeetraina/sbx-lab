@@ -25,23 +25,15 @@ In this module you give your agent the **Docker Hardened Images (DHI)** MCP serv
     dhi    remote http   ready    LOCAL, managed by you
     ```
 
-3. From the `project` directory, create a dedicated sandbox named `mcp`:
+3. From the `project` directory, create a dedicated sandbox named `mcp`, with the DHI server:
 
     ```bash
-    sbx create --name mcp --static-mcp none copilot .
+    sbx create --name mcp --static-mcp dhi copilot .
     ```
 
-    `--static-mcp none` starts the sandbox's MCP gateway with **no servers**, and without the discovery tools an agent could use to find and add servers by itself. You decide which servers it gets.
+    `--static-mcp dhi` starts the sandbox's MCP gateway with **exactly this server**, and without the discovery tools an agent could use to find and add servers by itself. You decide which servers it gets.
 
-4. Load the DHI server into the `mcp` sandbox:
-
-    ```bash
-    sbx mcp load dhi --sandbox mcp
-    ```
-
-    You should see `Loaded MCP server dhi into sandbox mcp`.
-
-5. Start an agent in the `mcp` sandbox:
+4. Start an agent in the `mcp` sandbox:
 
     ```bash
     sbx run --name mcp
@@ -53,12 +45,12 @@ In this module you give your agent the **Docker Hardened Images (DHI)** MCP serv
     Our backend image is python:3.12-slim (see backend/Dockerfile). Using the dhi MCP tools, in read-only mode (do not create or remove anything), find the Docker Hardened Image that matches it and how many known CVEs it has. At the end, list the tools you called.
     ```
 
-    The agent calls tools such as `dhi_get_repository` and `dhi_get_image_cves`, and suggests `dhi/python:3.12` along with its CVE count. If it says that it has no `dhi` tools, exit the session and run `sbx run --name mcp` again.
+    The agent calls tools such as `dhi_get_repository` and `dhi_get_image_cves`, and suggests `dhi/python:3.12` along with its CVE count. If it says that it has no `dhi` tools, see [Troubleshooting](troubleshooting.md).
 
     > [!IMPORTANT]
     > The DHI server also has tools that change things (creating and removing mirrors in your Docker organization). That's why the prompt asks for read-only use: always check which tools an agent calls.
 
-6. Exit the session (press **`Ctrl-C` twice**), then look at the sandbox's network activity:
+5. Exit the session (press **`Ctrl-C` twice**), then look at the sandbox's network activity:
 
     ```bash
     sbx policy log mcp
