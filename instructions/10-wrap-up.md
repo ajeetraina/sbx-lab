@@ -9,6 +9,7 @@ You've completed the **Docker Sandboxes with GitHub Copilot Lab**. Well done!
 - Run an agent in **direct mode**, or in isolated **clone mode** with several agents **in parallel**, and review their work before merging it.
 - Monitor your sandboxes and their network activity from the **TUI dashboard** and with `sbx policy log`.
 - Run **Docker inside a sandbox** and reach the services with **port forwarding**.
+- Give your agent tools through the **MCP gateway** without opening its network.
 
 ## Clean up
 
@@ -20,6 +21,12 @@ sbx rm quickstart fix-bugs add-search add-notif
 ```
 
 `sbx rm` asks for confirmation (add `--force` to skip it). The sandbox created by `sbx run shell` in the network policies module is named after the folder you ran it from: remove it too, using the name shown by `sbx ls`. You can also remove all stopped sandboxes at once with `sbx prune`.
+
+If you don't want to keep the DHI MCP server, remove its registration:
+
+```bash
+sbx mcp rm dhi
+```
 
 Your network policy is still **Locked Down**, with the rules you added for the lab (check with `sbx policy ls`). Keep it, adding hosts as your projects need them, or go back to the **Balanced** profile:
 
@@ -41,4 +48,4 @@ Then choose **Balanced** in the picker (non-interactive: `sbx policy reset --for
 
 Did you find a problem or have an idea to improve this lab? [Open an issue](https://github.com/mathieu-benoit/sbx-lab/issues). Thank you for joining!
 
-[[<< Previous: Port forwarding](08-port-forwarding.md) | [Home](../README.md)]
+[[<< Previous: MCP servers](09-mcp-servers.md) | [Home](../README.md)]

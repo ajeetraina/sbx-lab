@@ -27,6 +27,13 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 - `host.docker.internal` reaches host services from inside a sandbox.
 - `SBX_NO_TELEMETRY=1` disables telemetry.
 
+## MCP module (checked with `sbx` v0.53.0)
+
+- Remote MCP servers (`--url https://...`) work in local sandboxes and can be loaded live with `sbx mcp load NAME --sandbox SANDBOX`; their tools show up directly in the agent's tool list.
+- Image servers (`--url dhi.io/fetch-mcp:latest`) did not work: `sbx mcp load` fails with `409 ... has no control-plane MCP gateway; cannot add a remote server live`, and with `--static-mcp` the gateway starts with no backend. `--local` and `--command docker ...` servers need Docker on the host, which the lab doesn't require. Hence the remote DHI server in module 09.
+- The DHI MCP server also exposes write tools (`dhi_create_mirror`, `dhi_remove_mirror`); the module's prompt asks for read-only use.
+- Registration with a fresh account (`sbx mcp add dhi --url https://dhi.io/mcp`, browser sign-in) was not re-tested: the test machine already had it registered.
+
 ## Roadmap ideas
 
 - Add a module on **Kits** (see the [kit specification](https://github.com/docker/sandbox-kit-spec)).
