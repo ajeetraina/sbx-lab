@@ -13,6 +13,7 @@ In this hands-on lab you will use GitHub Copilot inside a [Docker Sandbox](https
 - Run an agent in **direct mode** and in isolated **clone mode**, and run several agents **in parallel**
 - Monitor sandboxes from the **TUI dashboard**
 - Run **Docker inside a sandbox** and reach it from your browser with **port forwarding**
+- Give your agent tools through the sandbox's **MCP gateway**
 
 ## Table of contents
 
@@ -27,7 +28,8 @@ In this hands-on lab you will use GitHub Copilot inside a [Docker Sandbox](https
 | 06 | [Clone mode and parallel agents](instructions/06-parallel-agents.md)| Run isolated agents side by side and merge their work    |
 | 07 | [Docker inside the sandbox](instructions/07-docker-inside-the-sandbox.md) | Start the full app with Docker Compose in a sandbox |
 | 08 | [Port forwarding](instructions/08-port-forwarding.md)               | Open the app running in the sandbox in your browser      |
-| 09 | [Wrap up](instructions/09-wrap-up.md)                               | Clean up and find out where to go next                   |
+| 09 | [MCP servers](instructions/09-mcp-servers.md)                       | Give your agent a tool without opening its network       |
+| 10 | [Wrap up](instructions/10-wrap-up.md)                               | Clean up and find out where to go next                   |
 
 Stuck? See [Troubleshooting](instructions/troubleshooting.md).
 

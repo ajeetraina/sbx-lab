@@ -60,4 +60,4 @@ Sandboxes are network-isolated: your browser can't reach a server running inside
 > [!IMPORTANT]
 > Ports are only reachable while the sandbox is running. A sandbox stops when no agent session is attached, so keep your agent session open, or start it without a session with `sbx run --detach --name quickstart`. Published ports are restored when the sandbox restarts.
 
-[[<< Previous: Docker inside the sandbox](07-docker-inside-the-sandbox.md) | [Next >> Wrap up](09-wrap-up.md)]
+[[<< Previous: Docker inside the sandbox](07-docker-inside-the-sandbox.md) | [Next >> MCP servers](09-mcp-servers.md)]
