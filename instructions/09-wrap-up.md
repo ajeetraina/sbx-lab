@@ -21,7 +21,13 @@ sbx rm quickstart fix-bugs add-search add-notif
 
 `sbx rm` asks for confirmation (add `--force` to skip it). The sandbox created by `sbx run shell` in the network policies module is named after the folder you ran it from: remove it too, using the name shown by `sbx ls`. You can also remove all stopped sandboxes at once with `sbx prune`.
 
-Your network policy is currently the **Balanced** profile, which is the recommended default. Check it with `sbx policy ls`.
+Your network policy is still **Locked Down**, with the rules you added for the lab (check with `sbx policy ls`). Keep it, adding hosts as your projects need them, or go back to the **Balanced** profile:
+
+```bash
+sbx policy reset
+```
+
+Then choose **Balanced** in the picker (non-interactive: `sbx policy reset --force && sbx policy init balanced`).
 
 ## Next steps
 

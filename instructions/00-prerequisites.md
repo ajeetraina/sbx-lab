@@ -35,7 +35,7 @@ Every exercise depends on `sbx` running correctly on your computer. **Do not ski
     Follow the instructions on the screen.
 
     > [!NOTE]
-    > The first time you use `sbx` you may be asked to choose a default network policy. Pick **Balanced**; you will explore the other options in the next module.
+    > The first time you use `sbx` you may be asked to choose a default network policy. Pick **Balanced** for now; the next module switches you to **Locked Down**.
 
 3. Check that your installation is healthy:
 

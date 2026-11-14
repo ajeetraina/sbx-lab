@@ -5,7 +5,7 @@ Run `sbx diagnose` first: it checks the most common installation problems.
 | Problem | Solution |
 |---------|----------|
 | `sbx create` fails because the sandbox name already exists | Remove the old sandbox with `sbx rm <name>` (see the names with `sbx ls`), then create it again. |
-| The agent can't install packages or reach a website | Check `sbx policy ls`, then `sbx policy log` to see which hosts were blocked. Allow what is needed with `sbx policy allow network <host>`, or use the **Network** panel of the TUI (`sbx`, then `Tab`). |
+| The agent can't install packages or reach a website | The lab runs with the **Locked Down** policy, so only the hosts allowed in [Network policies](01-network-policies.md#allow-only-what-the-lab-needs) are reachable. Check that those rules exist with `sbx policy ls`, then run `sbx policy log` to see which hosts were blocked. Allow what is needed with `sbx policy allow network <host>`, or use the **Network** panel of the TUI (`sbx`, then `Tab`). |
 | `sbx policy ls` shows policies whose `SOURCE` is not `local` | Your organization manages your sandbox policies and some exercises may be blocked. Use a personal Docker account or ask your administrator. |
 | The agent can't authenticate to GitHub or Copilot | Run `gh auth status`, then store the secrets again **before** creating the sandbox (see [Secrets and credentials](02-secrets-credentials.md)). Global secrets are injected at creation time, so recreate the sandbox if you added them afterwards. |
 | `git fetch sandbox-<name>` fails | The sandbox must be running, and a sandbox stops when its agent session ends. Start it again without a new session with `sbx run --detach --name <name>`, then fetch. |
