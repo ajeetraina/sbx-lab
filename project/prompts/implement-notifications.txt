@@ -24,6 +24,6 @@ Steps:
    that nothing is sent (and nothing crashes) when the SMTP configuration is missing.
    pytest-asyncio is not installed: run the coroutine with asyncio.run().
 4. Run the tests: cd project/backend && ~/venv/bin/pytest tests/ -v
-   Your new tests must pass. Other failing tests (pagination, updated_at) are
-   unrelated and being fixed separately: do not change them.
+   Your new tests must pass. If other tests fail, they are unrelated to notifications:
+   do not change them, just report them.
 5. Keep your changes limited to what notifications need, then commit with a descriptive message

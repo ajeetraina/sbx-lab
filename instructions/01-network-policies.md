@@ -27,7 +27,15 @@ sbx policy reset
 The CLI restarts the daemon, resets the policies, and shows a picker. Choose the **Locked Down** option (all network traffic is blocked unless you allow it).
 
 > [!TIP]
-> To do the same without the interactive picker, run `sbx policy reset --force && sbx policy init deny-all`.
+> To do the same without the interactive picker, run these two commands:
+>
+> ```bash
+> sbx policy reset --force
+> ```
+>
+> ```bash
+> sbx policy init deny-all
+> ```
 
 Check the configured policies:
 
@@ -58,13 +66,13 @@ You will see this message:
     Reason:      no matching allow rule (default deny)
 ```
 
-Run a simple sandbox with a shell (the first start can take a minute):
+Now start your **first sandbox**: a microVM with just a shell, no agent yet. It's named after the current folder, and that folder is its workspace:
 
 ```bash
 sbx run shell
 ```
 
-Once the sandbox is created, try to reach `docker.com` from there:
+Your prompt changes: you're now inside the sandbox. Try to reach `docker.com` from there:
 
 ```bash
 curl docker.com
@@ -74,7 +82,12 @@ You will see this message:
 
 ```none
 Approval required for docker.com:80.
+
+Review and respond with:
+  sbx policy approval ls
 ```
+
+The request never left your machine: the host-side proxy blocked it and filed a **pending approval**. You could grant it from the host with `sbx policy approval`, or from the [TUI dashboard](05-tui-dashboard.md). In this module you'll add a rule instead, which applies to every sandbox.
 
 Exit this sandbox to return to your host:
 
@@ -130,13 +143,13 @@ Reconnect to the sandbox:
 sbx run shell
 ```
 
-Once in the sandbox, try to reach `docker.com` again:
+Once in the sandbox, try to reach `docker.com` again, showing only the response headers:
 
 ```bash
-curl docker.com
+curl -I docker.com
 ```
 
-It should work now! Type `exit` to return to your host.
+This time `docker.com` answers itself, with a `301 Moved Permanently` redirect to HTTPS, instead of the proxy's approval message. Type `exit` to return to your host.
 
 > [!TIP]
 > You can allow several hosts in a single command, and use wildcards: `*.example.com` matches exactly one subdomain level (`api.example.com`), `**.example.com` matches any depth (`api.eu.example.com`). Neither matches `example.com` itself.
@@ -177,7 +190,7 @@ Each rule you define manually is stored separately. To remove them, use the `sbx
 
 If you have a service running on your host machine (for example a local Ollama instance or a database), you can't reach it via `localhost` from inside the sandbox, because `localhost` there is the sandbox itself.
 
-Use `host.docker.internal` instead, and add a policy rule if needed. You don't need to run this command for the lab:
+Inside the sandbox, use the name `host.docker.internal`, which the proxy routes to your host. The policy rule, on the other hand, names the service as your host sees it, `localhost:<port>`: you decide which ports of your own machine are reachable, one by one. You don't need to run this command for the lab:
 
 ```bash
 sbx policy allow network localhost:11434

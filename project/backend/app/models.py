@@ -59,7 +59,6 @@ class Project(Base):
     description = Column(Text, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=utcnow)
-    # BUG: missing onupdate=utcnow — updated_at is never refreshed on UPDATE
     updated_at = Column(DateTime, default=utcnow)
 
     owner = relationship("User", back_populates="projects")
@@ -78,7 +77,6 @@ class Issue(Base):
     reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=utcnow)
-    # BUG: missing onupdate=utcnow — updated_at is never refreshed on UPDATE
     updated_at = Column(DateTime, default=utcnow)
 
     project = relationship("Project", back_populates="issues")

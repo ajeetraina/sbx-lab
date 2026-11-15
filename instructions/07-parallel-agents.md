@@ -9,6 +9,15 @@ Everything in the previous module ran in **direct mode**: your agent edited your
 > [!NOTE]
 > The clone starts from your **committed** code. Make sure the fix from the previous module is committed (`git log --oneline` should show it).
 
+This module uses several terminals on your host, all opened at the root of the repository:
+
+| Terminal | Single clone | Parallel agents |
+|----------|--------------|-----------------|
+| 1 | `fix-bugs` agent | `add-search` agent |
+| 2 | `git fetch` and `git merge` | `git fetch` and `git merge`, then the `quickstart` agent |
+| 3 | | `add-notif` agent |
+| 4 | | TUI dashboard |
+
 ### Single clone: working in isolation
 
 1. Go back to the **root of the repository** and make sure that no agent session is still attached to your terminal (press **`Ctrl-C` twice** to exit one):
@@ -34,7 +43,7 @@ Everything in the previous module ran in **direct mode**: your agent edited your
     One test is still failing: test_updated_at_changes_on_update. The updated_at columns in project/backend/app/models.py are never refreshed when a row is updated. Fix the bug, run the tests to confirm it, and commit with a descriptive message.
     ```
 
-4. Once the agent has finished, fetch its work from a **second terminal** on your host, in the same repository:
+4. Once the agent has finished, fetch its work from **terminal 2**, leaving the agent session open in terminal 1:
 
     ```bash
     git fetch sandbox-fix-bugs
@@ -48,7 +57,9 @@ Everything in the previous module ran in **direct mode**: your agent edited your
     ```
 
     > [!NOTE]
-    > The fetch only works while the sandbox is running. If you get a connection error, restart it with `sbx run --name fix-bugs`.
+    > The fetch only works while the sandbox is running. If you get a connection error, restart it with `sbx run --detach --name fix-bugs`.
+
+    Once merged, exit the `fix-bugs` session in terminal 1 (press **`Ctrl-C` twice**).
 
 ### Parallel agents
 
@@ -64,7 +75,7 @@ The [`project/prompts/`](../project/prompts) directory contains a ready-made pro
 > [!TIP]
 > In Windows PowerShell 5.1 the prompt is passed with its line breaks flattened. It still works. For the exact formatting, use Git Bash or WSL.
 
-1. In a new terminal, from the root of the repository, start an agent that implements search:
+1. In terminal 1, start an agent that implements search:
 
     ```bash terminal-id=parallel-agent-1
     sbx run copilot --clone --name add-search --kit ./project/kits/python -- -i "$(cat project/prompts/implement-search.txt)"
@@ -73,15 +84,23 @@ The [`project/prompts/`](../project/prompts) directory contains a ready-made pro
     > [!IMPORTANT]
     > The `"$(cat ...)"` must be quoted, otherwise the prompt is not passed correctly to the agent.
 
-2. In another terminal, again from the root of the repository, start a second agent that implements notifications:
+2. In terminal 3, start a second agent that implements notifications:
 
     ```bash
     sbx run copilot --clone --name add-notif --kit ./project/kits/python -- -i "$(cat project/prompts/implement-notifications.txt)"
     ```
 
-Each sandbox gets its own isolated Git clone, so the agents read and write completely separate copies of the code. You can see both in `sbx ls`, and watch each agent's progress in its own terminal. Copilot already runs with `--yolo` by default, so the agents don't wait for confirmation.
+    Each sandbox gets its own isolated Git clone, so the agents read and write completely separate copies of the code. Copilot already runs with `--yolo` by default, so the agents don't wait for confirmation.
 
-When both agents report that they are done, fetch their work from a terminal on your host:
+3. While they work, open the dashboard in terminal 4:
+
+    ```bash
+    sbx
+    ```
+
+    Each agent has its own card, with its own CPU and memory use: two microVMs side by side. Press `Tab` for the Network panel and watch both agents reach the Copilot service and PyPI as they set up Python and run the tests, each under its own sandbox name. Exit with **`Ctrl-C`, then `Y`**: the agents keep working.
+
+When both agents report that they are done, fetch their work from terminal 2:
 
 ```bash
 git fetch sandbox-add-search
@@ -115,7 +134,7 @@ After fetching, each agent's commits are available as remote-tracking branches, 
 
     `--no-edit` keeps Git's default merge message instead of opening an editor. If both agents changed the same files you may get a merge conflict. Resolve it as you would any other conflict, then run `git merge --continue`.
 
-3. Check that the merged result works. Reconnect to your `quickstart` sandbox, whose workspace is your working tree:
+3. Check that the merged result works. In terminal 2, reconnect to your `quickstart` sandbox, whose workspace is your working tree:
 
     ```bash
     sbx run --name quickstart

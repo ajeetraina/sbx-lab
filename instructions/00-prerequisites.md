@@ -1,10 +1,13 @@
 # 📝 Prerequisites
 
+> [!IMPORTANT]
+> **Do this page at home, before the meetup.** It installs tools and downloads the sandbox images, several hundred megabytes that take a long time on shared Wi-Fi. It takes about 15 minutes.
+
 ## Accounts and tools
 
 - A computer running macOS, Windows, or Linux.
 - A **Docker account**. Docker Sandboxes are free to use; [create a Docker account](https://hub.docker.com/signup) if you don't have one.
-- A **GitHub account with access to GitHub Copilot**. [Create a GitHub account](https://github.com/signup) and check the [Copilot plans](https://github.com/features/copilot/plans) for the available options.
+- A **GitHub account with access to GitHub Copilot**. [Create a GitHub account](https://github.com/signup) and check the [Copilot plans](https://github.com/features/copilot/plans) for the available options. The lab sends about **10 prompts** to the agent, which count against your Copilot premium requests. On **Copilot Free**, whose monthly allowance is small, check in your [Copilot settings](https://github.com/settings/copilot) that you have enough left.
 - **Git**, to clone the repository and review the agents' work.
 - The **GitHub CLI** (`gh`), signed in to your GitHub account. [Install it](https://cli.github.com/), then run `gh auth login` and verify with:
 
@@ -61,6 +64,22 @@ Every exercise depends on `sbx` running correctly on your computer. **Do not ski
 
     If you see policies from any other source, your organization restricts what sandboxes can do and some exercises may not work. Use a personal Docker account or ask your administrator for guidance.
 
-You're all set! Move on to the next module.
+5. Clone the lab repository if you haven't yet (see [Getting started](../README.md#getting-started)), then, from its root, download the two sandbox images the lab uses by creating, then removing, a sandbox of each kind:
+
+    ```bash
+    sbx create --name warmup-shell shell .
+    ```
+
+    ```bash
+    sbx create --name warmup-copilot copilot .
+    ```
+
+    ```bash
+    sbx rm --force warmup-shell warmup-copilot
+    ```
+
+    The images stay on your computer, so the sandboxes you create during the lab start in seconds.
+
+You're all set! At the meetup, start with the next module.
 
 [[Home](../README.md) | [Next >> Network policies](01-network-policies.md)]
