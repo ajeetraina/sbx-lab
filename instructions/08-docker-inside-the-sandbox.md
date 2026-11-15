@@ -2,7 +2,7 @@
 
 Each sandbox has its own private Docker daemon. Your agent can run `docker compose up`, build images, and start containers, and none of them appear in your host's `docker ps`.
 
-1. Go back to the `project` directory (module 06 left you at the root of the repository) and reconnect to your sandbox:
+1. Go back to the `project` directory (the clone mode module left you at the root of the repository) and reconnect to your sandbox:
 
     ```bash
     cd project
@@ -55,4 +55,4 @@ Each sandbox has its own private Docker daemon. Your agent can run `docker compo
 
 The containers your agent runs live entirely inside the sandbox. When you remove the sandbox with `sbx rm`, all its images, containers, and PostgreSQL data are deleted too.
 
-[[<< Previous: Clone mode and parallel agents](06-parallel-agents.md) | [Next >> Port forwarding](08-port-forwarding.md)]
+[[<< Previous: Clone mode and parallel agents](07-parallel-agents.md) | [Next >> Port forwarding](09-port-forwarding.md)]

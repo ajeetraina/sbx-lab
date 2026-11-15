@@ -5,12 +5,12 @@ You've completed the **Docker Sandboxes with GitHub Copilot Lab**. Well done!
 ✅ You now know how to:
 
 - Control which network destinations your agents can reach with **network policies**.
+- Read an agent's **kit** to see what it runs and what it's given, and write your own mixin.
 - Keep your **credentials** out of the agent's reach while still letting it authenticate.
 - Run an agent in **direct mode**, or in isolated **clone mode** with several agents **in parallel**, and review their work before merging it.
 - Monitor your sandboxes and their network activity from the **TUI dashboard** and with `sbx policy log`.
 - Run **Docker inside a sandbox** and reach the services with **port forwarding**.
 - Give your agent tools through the **MCP gateway** without opening its network.
-- Read an agent's **kit** to see what it runs and what it's given.
 
 ## Clean up
 
@@ -18,7 +18,7 @@ Remove the sandboxes created during the lab, along with everything inside them (
 
 ```bash
 sbx ls
-sbx rm quickstart fix-bugs add-search add-notif mcp python-kit
+sbx rm quickstart fix-bugs add-search add-notif mcp
 ```
 
 `sbx rm` asks for confirmation (add `--force` to skip it). The sandbox created by `sbx run shell` in the network policies module is named after the folder you ran it from: remove it too, using the name shown by `sbx ls`. You can also remove all stopped sandboxes at once with `sbx prune`.
@@ -49,4 +49,4 @@ Then choose **Balanced** in the picker (non-interactive: `sbx policy reset --for
 
 Did you find a problem or have an idea to improve this lab? [Open an issue](https://github.com/mathieu-benoit/sbx-lab/issues). Thank you for joining!
 
-[[<< Previous: Kits](10-kits.md) | [Home](../README.md)]
+[[<< Previous: MCP servers](10-mcp-servers.md) | [Home](../README.md)]

@@ -20,7 +20,7 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 - Clone mode (`--clone`) exposes the clone as the Git remote `sandbox-<name>` (branches `sandbox-<name>/<branch>`); the fetch only works while the sandbox is running.
 - Multiple workspaces: the first path is the primary one (read-write); extra paths can be appended with `:ro` for read-only.
 - `sbx policy` subcommands: `allow`, `deny`, `check`, `init`, `log`, `ls`, `reset`, `rm` (also `approval`, `inspect`, `profile`, `refresh`). Non-interactive reset: `sbx policy reset --force && sbx policy init deny-all` (or `balanced`).
-- The lab runs with the **deny-all** policy plus the allow list in module 01 (*Allow only what the lab needs*). It was derived from `sbx policy log` of a full run (Copilot Enterprise; `**.githubcopilot.com` also covers the Individual and Business subdomains). If the lab starts using a new host (dependency, image, registry), add it there. A full run of modules 05-08 under this policy (`sbx` v0.53.0, Copilot Enterprise) had no blocked hosts other than Next.js telemetry, which Compose now disables.
+- The lab runs with the **deny-all** policy plus the allow list in module 01 (*Allow only what the lab needs*). It was derived from `sbx policy log` of a full run (Copilot Enterprise; `**.githubcopilot.com` also covers the Individual and Business subdomains). If the lab starts using a new host (dependency, image, registry), add it there. A full run of modules 06-09 under this policy (`sbx` v0.53.0, Copilot Enterprise) had no blocked hosts other than Next.js telemetry, which Compose now disables.
 - Secrets are global by default; use `--sandbox <name>` to scope one. Global secrets are injected at sandbox creation time.
 - Copilot starts with `--yolo` by default; arguments after `--` are appended.
 - Services must listen on `0.0.0.0` (not `127.0.0.1`) for port forwarding to work.
@@ -29,19 +29,19 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 
 ## MCP module (checked with `sbx` v0.53.0)
 
-- Remote MCP servers (`--url https://...`) work in local sandboxes and can be loaded live with `sbx mcp load NAME --sandbox SANDBOX`; their tools show up directly in the agent's tool list. Module 09 creates a dedicated `mcp` sandbox with `--static-mcp dhi` (gateway with exactly that server and no discovery tools): tested end to end. Loading into a `--static-mcp none` sandbox with `sbx mcp load` also works.
-- Image servers (`--url dhi.io/fetch-mcp:latest`) did not work: `sbx mcp load` fails with `409 ... has no control-plane MCP gateway; cannot add a remote server live`, and with `--static-mcp` the gateway starts with no backend. `--local` and `--command docker ...` servers need Docker on the host, which the lab doesn't require. Hence the remote DHI server in module 09.
+- Remote MCP servers (`--url https://...`) work in local sandboxes and can be loaded live with `sbx mcp load NAME --sandbox SANDBOX`; their tools show up directly in the agent's tool list. Module 10 creates a dedicated `mcp` sandbox with `--static-mcp dhi` (gateway with exactly that server and no discovery tools): tested end to end. Loading into a `--static-mcp none` sandbox with `sbx mcp load` also works.
+- Image servers (`--url dhi.io/fetch-mcp:latest`) did not work: `sbx mcp load` fails with `409 ... has no control-plane MCP gateway; cannot add a remote server live`, and with `--static-mcp` the gateway starts with no backend. `--local` and `--command docker ...` servers need Docker on the host, which the lab doesn't require. Hence the remote DHI server in module 10.
 - The DHI MCP server also exposes write tools (`dhi_create_mirror`, `dhi_remove_mirror`); the module's prompt only asks for look-ups and for the list of tools called (in the test, the agent used only `dhi_get_tag_definition` and `dhi_get_repository`).
 - Registration with a fresh account (`sbx mcp add dhi --url https://dhi.io/mcp`, browser sign-in) was not re-tested: the test machine already had it registered.
 
 ## Kits module (checked with `sbx` v0.53.0)
 
-- Module 10 shows `sbx kit inspect sbx/copilot` (table and `--format yaml`) and compares with `sbx/claude`. The sample outputs include image digests, which change when the kits are updated.
+- Module 02 (right after the network policies) shows `sbx kit inspect sbx/copilot` (table and `--format yaml`) and compares with `sbx/claude`. The sample outputs include image digests, which change when the kits are updated.
 - The `sbx` CLI shows agent kits as `kind: sandbox` with a `sandbox:` block (image, entrypoint, command), while the [kit specification](https://github.com/docker/sandbox-kit-spec) repository describes `workload` and `mixin` kits with `capabilities:`. Agent kits are shown the way `sbx` prints them; the Python mixin uses the specification's format (`kind: mixin`, `capabilities:`), which `sbx` accepts.
 - The Python mixin (`project/kits/python/python.yaml`, v3 format) validates, inspects and installs Python at `sbx create` time (tested). `sbx kit pack` doesn't accept it: it requires a `spec.yaml`, an older artifact format, so the module doesn't use `pack`. Remote kits (Git or OCI) are refused unless their publisher is in `kit.allowedSources`; the module explains this rather than asking participants to change the setting.
 - `sbx kit inspect sbx/copilot` reports `Policies: none`, but every Copilot sandbox gets a `kit` policy allowing Copilot's own hosts (`api.*.githubcopilot.com`, `api.github.com`, `github.com`, `copilot.github.com`). The Copilot telemetry hosts and `cafe.github.com` aren't in it, which is one reason module 01 still allows `**.githubcopilot.com` and `**.github.com`.
 
 ## Roadmap ideas
 
-- Use the Python mixin (`project/kits/python`) from module 03 onwards (`sbx create ... --kit ./kits/python`), to replace the "install Python" instructions in `AGENTS.md` and the Debian and PyPI rules of module 01.
+- Use the Python mixin (`project/kits/python`) from the first sandbox (module 04) onwards (`sbx create ... --kit ./kits/python`), to replace the "install Python" instructions in `AGENTS.md` and the Debian and PyPI rules of module 01.
 - Add a final module: VS Code, SSH, and a sandbox.

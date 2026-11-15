@@ -70,4 +70,4 @@ In this exercise your agent works in **direct mode**, the default, where its edi
 > [!IMPORTANT]
 > Installed packages **persist** across agent restarts for this sandbox. If you stop and reconnect to `quickstart`, you won't need to run `pip install` again.
 
-[[<< Previous: TUI dashboard](04-tui-dashboard.md) | [Next >> Clone mode and parallel agents](06-parallel-agents.md)]
+[[<< Previous: TUI dashboard](05-tui-dashboard.md) | [Next >> Clone mode and parallel agents](07-parallel-agents.md)]

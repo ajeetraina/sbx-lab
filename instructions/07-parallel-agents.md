@@ -129,4 +129,4 @@ After fetching, each agent's commits are available as remote-tracking branches, 
 
     All the tests should now pass, including the search test and the new notification tests. Exit the session with **`Ctrl-C` twice**.
 
-[[<< Previous: Run in direct mode](05-run-in-direct-mode.md) | [Next >> Docker inside the sandbox](07-docker-inside-the-sandbox.md)]
+[[<< Previous: Run in direct mode](06-run-in-direct-mode.md) | [Next >> Docker inside the sandbox](08-docker-inside-the-sandbox.md)]
