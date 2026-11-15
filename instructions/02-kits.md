@@ -183,6 +183,61 @@ You'll use this kit to create the sandboxes your agents work in, in [Agent sandb
 
 To share a kit, publish it in a Git repository or an OCI registry (`sbx kit push`). Remote kits are only installed from trusted publishers: `sbx` checks each reference against the `kit.allowedSources` setting (see `sbx settings get kit.allowedSources`). For example, if you published this kit in your own GitHub repository, someone using it as `--kit "git+https://github.com/<YOUR-GITHUB-USERNAME>/<REPOSITORY>.git#dir=kits/python"` must first allow `github.com/<YOUR-GITHUB-USERNAME>/` there.
 
+The next two sections show two more ways to package what you just did. They're here so you know they exist: you don't need to run them, and the rest of the lab doesn't use them.
+
+## Combine kits into a kit set
+
+In this lab you add the Python mixin to the Copilot kit with `--kit` each time you create a sandbox. A [kit set](https://docs.docker.com/ai/sandboxes/customize/author/kit-sets/) (Early Access) packages that combination as a single kit, so your team runs one reference, with the versions you chose:
+
+```yaml
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: set
+displayName: Copilot with Python
+version: "1.0.0"
+
+kits:
+  - ref: docker.io/sbx/copilot@sha256:<DIGEST>          # the agent kit you inspected above
+  - ref: docker.io/<NAMESPACE>/python-kit:1.0.0         # the Python mixin, once published
+```
+
+- A set lists its components under `kits:`: at most one agent kit (a workload) and any number of mixins.
+- Every component must be **published** to a registry. Local paths such as `./kits/python` aren't accepted, so you'd publish the Python mixin first.
+- Each component keeps its own network rules and credential requests. The set only adds what the combination needs on top, with the same `capabilities:` as a mixin.
+- You build and publish a set with Docker Buildx, `docker buildx build ./copilot-python -f ./copilot-python/copilot-python.yaml -t docker.io/<NAMESPACE>/copilot-python:1.0.0 --push`, then run it like any agent: `sbx run docker.io/<NAMESPACE>/copilot-python:1.0.0 --name quickstart`. No `--kit` needed.
+
+## Describe a sandbox in an environment file
+
+A kit packages tools. An [environment file](https://docs.docker.com/ai/sandboxes/configuration/environment-files/) (`sbxenv.yaml`, experimental) describes a whole sandbox instead: the agent and its kits, the workspace, the secrets, the published ports, MCP servers, and commands to run on your host. Commit it with the project, and every contributor gets the same sandbox without retyping flags.
+
+This file, at the root of the repository, gathers the setup you'll do step by step in the next modules:
+
+```yaml
+schemaVersion: "1"
+name: quickstart
+agent: copilot
+workspace: ./project          # the folder shared with the sandbox (module 04)
+
+kits:
+  - ./project/kits/python     # the Python mixin from this module
+
+secrets:                      # the GitHub token (module 03), stored for this sandbox only
+  github:
+    command: gh auth token
+  copilot:
+    command: gh auth token
+
+ports:                        # the published ports (module 09)
+  - sandbox: 8000
+    host: 8000
+  - sandbox: 3000
+    host: 3001
+```
+
+- `sbx env plan` shows what the file would create, without applying anything. `sbx env run` creates the sandbox if needed, after you approve the plan, then attaches to the agent. `sbx env rm` removes it.
+- Paths are relative to the file. Keep the file **outside** the workspace: it declares commands that run on your host, such as `gh auth token`, and the agent must not be able to change them.
+- Unlike a [kit's port](09-port-forwarding.md#publish-a-port-from-a-kit), an environment file can choose the host port, because it belongs to your project rather than being shared like a kit.
+
 ## Going further
 
 - **Extend an agent with a mixin**: `sbx run copilot --kit ./my-mixin/`. A mixin can come from a local directory, a ZIP file, a Git repository or an OCI registry.
