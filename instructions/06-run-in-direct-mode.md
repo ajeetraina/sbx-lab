@@ -2,6 +2,44 @@
 
 In this exercise your agent works in **direct mode**, the default, where its edits land straight in your working tree. You will have it run the test suite, diagnose the failures, fix a bug, and confirm that the tests pass.
 
+```mermaid
+graph LR
+    You(["You"])
+
+    subgraph Host["Your machine"]
+        direction TB
+        WorkingTree["Your working tree<br/>project/"]
+        Git["git diff, git commit"]
+    end
+
+    subgraph Sandbox["Sandbox: quickstart"]
+        direction TB
+        Agent["Copilot agent"]
+        Tests["pytest"]
+    end
+
+    You -->|"prompt: fix the pagination bug"| Agent
+    Agent -->|runs| Tests
+    Agent <-->|edits land instantly| WorkingTree
+    You -->|review and commit| Git
+    Git -->|reads| WorkingTree
+
+    %% Styles — containers
+    style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Sandbox fill:#f0faf4,stroke:#86c5a0,color:#00084D
+
+    %% Styles — host nodes
+    style WorkingTree fill:#fff,stroke:#0DB7ED,color:#384D54
+    style Git fill:#fff,stroke:#0DB7ED,color:#384D54
+
+    %% Styles — sandbox nodes
+    style Agent fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style Tests fill:#e0f2e6,stroke:#6db88a,color:#384D54
+
+    %% Styles — actor
+    style You fill:#fff,stroke:#1D63ED,color:#00084D
+```
+
 1. Reconnect to your sandbox from the `project` directory:
 
     ```bash

@@ -2,6 +2,53 @@
 
 Each sandbox has its own private Docker daemon. Your agent can run `docker compose up`, build images, and start containers, and none of them appear in your host's `docker ps`.
 
+```mermaid
+graph LR
+    subgraph Host["Your machine"]
+        direction TB
+        HostDocker["Your own Docker<br/>docker ps shows none of it"]
+        Proxy["Proxy"]
+    end
+
+    subgraph Sandbox["Sandbox: quickstart"]
+        direction TB
+        Agent["Copilot agent"]
+        subgraph Daemon["Private Docker daemon"]
+            direction TB
+            Frontend["frontend :3000"]
+            Backend["backend :8000"]
+            Db["postgres"]
+        end
+    end
+
+    Registries["Docker Hub, npm, PyPI"]
+
+    Agent -->|docker compose up| Daemon
+    Frontend -->|API calls| Backend
+    Backend -->|SQL| Db
+    Daemon -->|image and package downloads| Proxy
+    Proxy -->|allowed hosts| Registries
+    HostDocker -.->|"can't see"| Daemon
+
+    %% Styles — containers
+    style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Sandbox fill:#f0faf4,stroke:#86c5a0,color:#00084D
+    style Daemon fill:#f8fbff,stroke:#9fc5e8,color:#00084D
+
+    %% Styles — host nodes
+    style HostDocker fill:#fff,stroke:#0DB7ED,color:#384D54
+    style Proxy fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+
+    %% Styles — sandbox nodes
+    style Agent fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style Frontend fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style Backend fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style Db fill:#e0f2e6,stroke:#6db88a,color:#384D54
+
+    %% Styles — external nodes
+    style Registries fill:#fff0e5,stroke:#d4915e,color:#384D54
+```
+
 1. Go back to the `project` directory (the clone mode module left you at the root of the repository) and reconnect to your sandbox:
 
     ```bash

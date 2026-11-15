@@ -2,6 +2,56 @@
 
 The `sbx create` command provisions a sandbox without attaching to it. This is useful when you want to set it up, verify that it appears in `sbx ls`, or script several sandboxes before starting any of them. `sbx run` then attaches an agent session to an existing sandbox (or creates one on the fly if it doesn't exist yet).
 
+```mermaid
+graph LR
+    You(["You"])
+
+    subgraph Host["Your machine"]
+        direction TB
+        Project["project/ folder"]
+        RestOfDisk["The rest of your disk<br/>~/.ssh, other projects"]
+        Proxy["Proxy"]
+    end
+
+    subgraph Sandbox["Sandbox: quickstart"]
+        direction TB
+        Agent["Copilot agent<br/>with Python from the kit"]
+        AgentHome["Agent's own home<br/>placeholder tokens"]
+    end
+
+    subgraph Blocked["Not allowed"]
+        direction TB
+        PasteSite["paste.rs"]
+    end
+
+    You -->|"sbx create, exec, run"| Agent
+    Project <-->|workspace mount| Agent
+    RestOfDisk -.->|not shared| Sandbox
+    Agent -->|uses| AgentHome
+    Agent -->|upload attempt| Proxy
+    Proxy -.->|blocked| PasteSite
+
+    %% Styles — containers
+    style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Sandbox fill:#f0faf4,stroke:#86c5a0,color:#00084D
+    style Blocked fill:#fff5f5,stroke:#e57373,color:#00084D
+
+    %% Styles — host nodes
+    style Project fill:#fff,stroke:#0DB7ED,color:#384D54
+    style RestOfDisk fill:#fff,stroke:#0DB7ED,color:#384D54
+    style Proxy fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+
+    %% Styles — sandbox nodes
+    style Agent fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style AgentHome fill:#e0f2e6,stroke:#6db88a,color:#384D54
+
+    %% Styles — blocked nodes
+    style PasteSite fill:#fff,stroke:#e57373,color:#384D54
+
+    %% Styles — actor
+    style You fill:#fff,stroke:#1D63ED,color:#00084D
+```
+
 ## Starting the sandbox
 
 1. From the root of the cloned repository, switch to the sample application directory:

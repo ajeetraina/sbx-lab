@@ -11,6 +11,47 @@ There are two kinds of kits:
 | Agent kit (`kind: sandbox`) | Defines the agent: its image, entrypoint, default arguments, and what it needs | `sbx/copilot`, `sbx/claude` |
 | Mixin | Extends an agent kit with a tool, a credential, a network rule, a file… | Added with `sbx create <agent> --kit <reference>` |
 
+```mermaid
+graph LR
+    subgraph Kits["Kits, written in YAML"]
+        direction TB
+        AgentKit["Agent kit: sbx/copilot<br/>image, entrypoint, --yolo"]
+        Mixin["Mixin: kits/python<br/>install step, network rules"]
+    end
+
+    Create["sbx create --kit"]
+
+    subgraph Sandbox["Agent's sandbox"]
+        direction TB
+        Copilot["Copilot CLI"]
+        Python["Python 3, venv, pip"]
+    end
+
+    KitPolicy["Kit policy<br/>for this sandbox only"]
+
+    AgentKit -->|defines the agent| Create
+    Mixin -->|adds to it| Create
+    Create -->|starts| Copilot
+    Create -->|installs| Python
+    Create -->|adds| KitPolicy
+
+    %% Styles — containers
+    style Kits fill:#f8fbff,stroke:#9fc5e8,color:#00084D
+    style Sandbox fill:#f0faf4,stroke:#86c5a0,color:#00084D
+
+    %% Styles — kit nodes
+    style AgentKit fill:#fff,stroke:#0DB7ED,color:#384D54
+    style Mixin fill:#fff,stroke:#0DB7ED,color:#384D54
+    style KitPolicy fill:#fff,stroke:#0DB7ED,color:#384D54
+
+    %% Styles — infrastructure
+    style Create fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+
+    %% Styles — sandbox nodes
+    style Copilot fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style Python fill:#e0f2e6,stroke:#6db88a,color:#384D54
+```
+
 Run the commands of this module from the root of the repository.
 
 ## Inspect the Copilot kit
