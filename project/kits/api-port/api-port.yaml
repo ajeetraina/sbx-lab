@@ -1,0 +1,11 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: mixin
+displayName: DevBoard API port
+description: Publishes the sandbox's port 8000, where the DevBoard API listens, to the host
+
+capabilities:
+  # Ask for the sandbox port only: sbx picks a free host port on 127.0.0.1.
+  - type: com.docker.sandbox/port@1
+    config:
+      container: 8000
