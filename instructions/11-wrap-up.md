@@ -10,6 +10,7 @@ You've completed the **Docker Sandboxes with GitHub Copilot Lab**. Well done!
 - Monitor your sandboxes and their network activity from the **TUI dashboard** and with `sbx policy log`.
 - Run **Docker inside a sandbox** and reach the services with **port forwarding**.
 - Give your agent tools through the **MCP gateway** without opening its network.
+- Read an agent's **kit** to see what it runs and what it's given.
 
 ## Clean up
 
@@ -48,4 +49,4 @@ Then choose **Balanced** in the picker (non-interactive: `sbx policy reset --for
 
 Did you find a problem or have an idea to improve this lab? [Open an issue](https://github.com/mathieu-benoit/sbx-lab/issues). Thank you for joining!
 
-[[<< Previous: MCP servers](09-mcp-servers.md) | [Home](../README.md)]
+[[<< Previous: Kits](10-kits.md) | [Home](../README.md)]

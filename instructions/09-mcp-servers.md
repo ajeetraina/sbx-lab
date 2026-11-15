@@ -61,4 +61,4 @@ In this module you give your agent the **Docker Hardened Images (DHI)** MCP serv
 > [!WARNING]
 > Registering an MCP server is a trust decision. It runs outside the sandbox, with your host's permissions (local servers) or under the remote service's control, so the sandbox's network policy doesn't apply to it. Only register servers you trust.
 
-[[<< Previous: Port forwarding](08-port-forwarding.md) | [Next >> Wrap up](10-wrap-up.md)]
+[[<< Previous: Port forwarding](08-port-forwarding.md) | [Next >> Kits](10-kits.md)]

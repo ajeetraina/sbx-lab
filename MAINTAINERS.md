@@ -34,7 +34,12 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 - The DHI MCP server also exposes write tools (`dhi_create_mirror`, `dhi_remove_mirror`); the module's prompt only asks for look-ups and for the list of tools called (in the test, the agent used only `dhi_get_tag_definition` and `dhi_get_repository`).
 - Registration with a fresh account (`sbx mcp add dhi --url https://dhi.io/mcp`, browser sign-in) was not re-tested: the test machine already had it registered.
 
+## Kits module (checked with `sbx` v0.53.0)
+
+- Module 10 shows `sbx kit inspect sbx/copilot` (table and `--format yaml`) and compares with `sbx/claude`. The sample outputs include image digests, which change when the kits are updated.
+- The `sbx` CLI shows agent kits as `kind: sandbox` with a `sandbox:` block (image, entrypoint, command), while the [kit specification](https://github.com/docker/sandbox-kit-spec) repository describes `workload` and `mixin` kits with `capabilities:`. The module sticks to what `sbx` shows and links the specification.
+
 ## Roadmap ideas
 
-- Add a module on **Kits** (see the [kit specification](https://github.com/docker/sandbox-kit-spec)).
+- A mixin kit that adds Python to the Copilot sandbox (and declares PyPI and Debian in its network policy), to replace the "install Python" instructions in `AGENTS.md`.
 - Add a final module: VS Code, SSH, and a sandbox.
