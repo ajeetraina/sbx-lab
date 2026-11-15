@@ -61,11 +61,12 @@ Before you hand this sandbox to an agent that runs without asking for confirmati
 1. **Your token isn't there.** Look for it in the sandbox's environment:
 
     ```bash
-    sbx exec quickstart sh -c 'env | grep GH_TOKEN'
+    sbx exec quickstart sh -c 'env | grep _TOKEN='
     ```
 
     ```none
-    GH_TOKEN=gho_sbxproxymanaged000000000000000000000
+    GH_TOKEN=proxy-managed
+    COPILOT_GITHUB_TOKEN=proxy-managed
     ```
 
     That's a placeholder. Tools in the sandbox send it as if it were a real token, and the proxy on your host swaps in your actual token on the way out, only for the GitHub and Copilot hosts. Even if the agent printed or leaked this value, it would be useless.

@@ -41,11 +41,16 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 - The Python mixin (`project/kits/python/python.yaml`, v3 format) validates, inspects and installs Python at `sbx create` time (tested). `sbx kit pack` doesn't accept it: it requires a `spec.yaml`, an older artifact format, so the module doesn't use `pack`. Remote kits (Git or OCI) are refused unless their publisher is in `kit.allowedSources`; the module explains this rather than asking participants to change the setting.
 - `sbx kit inspect sbx/copilot` reports `Policies: none`, but every Copilot sandbox gets a `kit` policy allowing Copilot's own hosts (`api.*.githubcopilot.com`, `api.github.com`, `github.com`, `copilot.github.com`). The Copilot telemetry hosts and `cafe.github.com` aren't in it, which is one reason module 01 still allows `**.githubcopilot.com` and `**.github.com`.
 
-## Isolation checks in module 04 (partly checked with `sbx` v0.53.0)
+## Isolation checks in module 04 (checked with `sbx` v0.53.0)
 
-- Checked with `sbx exec` in an existing shell sandbox: `GH_TOKEN` is the placeholder `gho_sbxproxymanaged000000000000000000000`; `~` is the agent's own home (no `.ssh`) and only the workspace's own path is visible from the host's home folder; a blocked request prints `Approval required for <host>:<port>.` followed by `Review and respond with: sbx policy approval ls`.
-- Not checked yet: the exact message for the blocked HTTPS `POST` to `paste.rs` (the module expects `Approval required for paste.rs:443.`), and that it shows in `sbx policy log quickstart` and in the TUI's Network panel.
-- Not checked yet: the pre-meetup warm-up in module 00 (`sbx create` of a `shell` and a `copilot` sandbox, then `sbx rm`) keeps the template images cached, so that the lab's sandboxes start without a download; and how far a Copilot Free allowance goes through the lab's ~10 prompts.
+- Checked in a fresh `quickstart` sandbox (`sbx create --name quickstart --kit ./kits/python copilot .`, 22 s with cached images, 14 s of it for the Python install):
+  - `env | grep _TOKEN=` shows `GH_TOKEN=proxy-managed` and `COPILOT_GITHUB_TOKEN=proxy-managed`. A `shell` sandbox shows `GH_TOKEN=gho_sbxproxymanaged000000000000000000000` instead, so the module's expected output is for Copilot sandboxes only.
+  - `pwd` is the host path of the workspace; `~` is the agent's own home (`.bashrc`, `.copilot`, `.docker`, `.gitconfig`..., no `.ssh`). From a shell sandbox, the host's home folder only shows the path down to the workspace.
+  - The `POST` to `paste.rs` prints `Approval required for paste.rs:443.`, then `Review and respond with: sbx policy approval ls`, and exits 0. It shows in `sbx policy log quickstart` (blocked, `No matching allow rule (default deny)`) and as a pending approval in `sbx policy approval ls`.
+  - `sbx policy log <name>` also lists entries of an earlier, removed sandbox with the same name.
+- Module 01: with `docker.com` allowed, `curl -I docker.com` returns `HTTP/1.1 301 Moved Permanently` with `Location: https://www.docker.com/`. Without a terminal, `sbx policy rm` needs `--force`; in a terminal it asks for confirmation.
+- Pre-meetup warm-up (module 00): `sbx create` of a `shell` and a `copilot` sandbox took about 7 s each with cached images, and `sbx rm` keeps the template images (`sbx template ls` unchanged). Not checked: a first download on a machine without cached images.
+- Not checked: the TUI's Network panel (needs a keyboard), how far a Copilot Free allowance goes through the lab's ~10 prompts, and signing in to the DHI MCP server with a free Docker account.
 - The source files no longer label the intentional bugs with `# BUG:` comments, so that the agent has to find them; the tests still carry the hints.
 
 ## Roadmap ideas

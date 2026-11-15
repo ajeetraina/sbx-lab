@@ -172,7 +172,7 @@ sbx policy deny network ads.example.com
 
 ## Removing custom policies
 
-Each rule you define manually is stored separately. To remove them, use the `sbx policy rm` command:
+Each rule you define manually is stored separately. To remove them, use the `sbx policy rm` command, and confirm when it asks (add `--force` to skip the question):
 
 1. Remove the allow rule for `docker.com`:
 
