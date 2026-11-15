@@ -98,7 +98,9 @@ capabilities:
           user: "0"
           command: apt-get update && apt-get install -y --no-install-recommends python3 python3-venv python3-pip
 
-  # Only the hosts Python needs: Debian packages while installing, PyPI afterwards.
+  # Only the hosts this kit needs. While installing: the sandbox image's apt
+  # repositories (Debian and Docker Hardened Images), which apt-get update reads.
+  # Afterwards: PyPI, for pip.
   - type: com.docker.sandbox/network-policy@1
     config:
       install:
@@ -107,7 +109,7 @@ capabilities:
         allow: [pypi.org, files.pythonhosted.org]
 ```
 
-It declares two capabilities: a **lifecycle** hook that runs once when the sandbox is created, and a **network policy** that opens only the hosts Python needs. No Dockerfile is needed for this one.
+It declares two capabilities: a **lifecycle** hook that runs once when the sandbox is created, and a **network policy** that opens only the hosts this kit needs. While installing, that's the sandbox image's apt repositories, `deb.debian.org` and `dhi.io` (Docker Hardened Images), because `apt-get update` reads every configured source. Afterwards, it's PyPI for `pip`. No Dockerfile is needed for this one.
 
 1. Check that the kit is valid:
 
@@ -170,7 +172,7 @@ It declares two capabilities: a **lifecycle** hook that runs once when the sandb
     sbx policy ls
     ```
 
-    A new `kit` policy applies only to `sandbox:python-kit`. Inspect it (`sbx policy inspect <POLICY>`) to see Copilot's own hosts, plus the Debian and PyPI hosts your mixin declared. These rules add to your **Locked Down** policy, for this sandbox only.
+    A new `kit` policy applies only to `sandbox:python-kit`. Inspect it (`sbx policy inspect <POLICY>`) to see Copilot's own hosts, plus the apt and PyPI hosts your mixin declared. These rules add to your **Locked Down** policy, for this sandbox only.
 
 6. Remove the sandbox, you won't need it in the rest of the lab:
 

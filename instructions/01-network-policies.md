@@ -209,7 +209,7 @@ sbx policy allow network "registry.npmjs.org"
 |------|---------|--------|
 | `github.com`, `**.github.com` | GitHub API, used by Copilot | all agent modules |
 | `**.githubcopilot.com` | Copilot service; the subdomain depends on your plan (`api.individual…`, `api.business…`, `api.enterprise…`), hence `**` | all agent modules |
-| `deb.debian.org`, `dhi.io` | Installing Python with `apt` in the sandbox (the sandbox image doesn't include it) | [Run in direct mode](06-run-in-direct-mode.md), [Clone mode and parallel agents](07-parallel-agents.md) |
+| `deb.debian.org`, `dhi.io` | The sandbox image's `apt` repositories (Debian and Docker Hardened Images), used to install Python, which the image doesn't include | [Run in direct mode](06-run-in-direct-mode.md), [Clone mode and parallel agents](07-parallel-agents.md) |
 | `pypi.org`, `files.pythonhosted.org` | Installing the backend's Python packages | Run in direct mode, Clone mode, [Docker inside the sandbox](08-docker-inside-the-sandbox.md) |
 | `**.docker.io`, `production.cloudfront.docker.com` | Pulling the `python`, `node` and `postgres` images from Docker Hub | Docker inside the sandbox |
 | `registry.npmjs.org` | Installing the frontend's npm packages | Docker inside the sandbox |
