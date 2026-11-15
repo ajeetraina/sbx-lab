@@ -14,6 +14,36 @@ You've completed the **Docker Sandboxes with GitHub Copilot Lab**. Well done!
 
 ## Clean up
 
+```mermaid
+graph LR
+    You(["You"])
+
+    subgraph Lab["What the lab left on your machine"]
+        direction TB
+        Sandboxes["Sandboxes<br/>quickstart, fix-bugs, add-search, add-notif, mcp, shell"]
+        McpRegistration["DHI MCP registration"]
+        Secrets["github and copilot secrets"]
+        Policy["Locked Down policy<br/>and the lab's rules"]
+    end
+
+    You -->|sbx rm| Sandboxes
+    You -->|sbx mcp rm dhi| McpRegistration
+    You -->|sbx secret rm| Secrets
+    You -->|"keep it, or sbx policy reset"| Policy
+
+    %% Styles — containers
+    style Lab fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+
+    %% Styles — leftover nodes
+    style Sandboxes fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style McpRegistration fill:#fff,stroke:#0DB7ED,color:#384D54
+    style Secrets fill:#fff,stroke:#0DB7ED,color:#384D54
+    style Policy fill:#fff,stroke:#0DB7ED,color:#384D54
+
+    %% Styles — actor
+    style You fill:#fff,stroke:#1D63ED,color:#00084D
+```
+
 Remove the sandboxes created during the lab, along with everything inside them (images, containers, and data):
 
 ```bash

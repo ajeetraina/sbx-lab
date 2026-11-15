@@ -3,6 +3,50 @@
 > [!IMPORTANT]
 > **Do this page at home, before the meetup.** It installs tools and downloads the sandbox images, several hundred megabytes that take a long time on shared Wi-Fi. It takes about 15 minutes.
 
+```mermaid
+graph LR
+    You(["You, at home"])
+
+    subgraph Laptop["Your laptop"]
+        direction TB
+        Tools["git, gh and sbx CLIs"]
+        Daemon["sbx daemon"]
+        Cache["Image cache<br/>shell and copilot sandboxes"]
+    end
+
+    subgraph Accounts["Your accounts"]
+        direction TB
+        DockerAccount["Docker account"]
+        GitHubAccount["GitHub account<br/>with Copilot"]
+    end
+
+    Registry["Docker Hub<br/>sandbox images"]
+
+    You -->|installs| Tools
+    Tools -->|sbx login| DockerAccount
+    Tools -->|gh auth login| GitHubAccount
+    Tools -->|sbx diagnose| Daemon
+    Daemon -->|warm-up downloads| Registry
+    Registry -->|images saved to| Cache
+
+    %% Styles — containers
+    style Laptop fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Accounts fill:#fff7f0,stroke:#d4915e,color:#00084D
+
+    %% Styles — laptop nodes
+    style Tools fill:#fff,stroke:#0DB7ED,color:#384D54
+    style Daemon fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Cache fill:#fff,stroke:#0DB7ED,color:#384D54
+
+    %% Styles — external nodes
+    style DockerAccount fill:#fff0e5,stroke:#d4915e,color:#384D54
+    style GitHubAccount fill:#fff0e5,stroke:#d4915e,color:#384D54
+    style Registry fill:#fff0e5,stroke:#d4915e,color:#384D54
+
+    %% Styles — actor
+    style You fill:#fff,stroke:#1D63ED,color:#00084D
+```
+
 ## Accounts and tools
 
 - A computer running macOS, Windows, or Linux.

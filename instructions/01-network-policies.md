@@ -10,6 +10,64 @@ Every sandbox routes outbound HTTP/HTTPS through a host-side proxy that enforces
 
 In this lab you will use **Locked Down**, and allow only the hosts the exercises need.
 
+```mermaid
+graph LR
+    You(["You"])
+
+    subgraph Host["Your machine"]
+        direction TB
+        Rules["Policy rules<br/>Locked Down + lab allow list"]
+        Proxy["Proxy"]
+        Log["sbx policy log"]
+    end
+
+    subgraph Sandbox["Sandbox: shell"]
+        direction TB
+        Curl["curl docker.com"]
+    end
+
+    subgraph Allowed["Allowed hosts"]
+        direction TB
+        GitHub["GitHub and Copilot"]
+        Packages["Debian, PyPI, Docker Hub, npm"]
+    end
+
+    subgraph Blocked["Everything else"]
+        direction TB
+        Other["docker.com, any other host"]
+    end
+
+    You -->|"sbx policy allow, deny, rm"| Rules
+    Rules -->|decide| Proxy
+    Curl -->|every request| Proxy
+    Proxy -->|allowed| GitHub
+    Proxy -->|allowed| Packages
+    Proxy -.->|"denied: approval required"| Other
+    Proxy -->|records| Log
+
+    %% Styles — containers
+    style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Sandbox fill:#f0faf4,stroke:#86c5a0,color:#00084D
+    style Allowed fill:#fff7f0,stroke:#d4915e,color:#00084D
+    style Blocked fill:#fff5f5,stroke:#e57373,color:#00084D
+
+    %% Styles — host nodes
+    style Rules fill:#fff,stroke:#0DB7ED,color:#384D54
+    style Proxy fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Log fill:#fff,stroke:#0DB7ED,color:#384D54
+
+    %% Styles — sandbox nodes
+    style Curl fill:#e0f2e6,stroke:#6db88a,color:#384D54
+
+    %% Styles — external nodes
+    style GitHub fill:#fff0e5,stroke:#d4915e,color:#384D54
+    style Packages fill:#fff0e5,stroke:#d4915e,color:#384D54
+    style Other fill:#fff,stroke:#e57373,color:#384D54
+
+    %% Styles — actor
+    style You fill:#fff,stroke:#1D63ED,color:#00084D
+```
+
 To view the existing policies, use the `sbx policy ls` command:
 
 ```bash

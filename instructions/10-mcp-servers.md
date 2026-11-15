@@ -6,6 +6,50 @@ Each sandbox has an **MCP gateway**. The agent only talks to the gateway; the MC
 
 In this module you give your agent the **Docker Hardened Images (DHI)** MCP server, so it can look up a hardened alternative to an image DevBoard uses.
 
+```mermaid
+graph LR
+    You(["You"])
+
+    subgraph Host["Your machine"]
+        direction TB
+        McpRegistry["Registered MCP servers<br/>sbx mcp add dhi"]
+        Gateway["MCP gateway"]
+    end
+
+    subgraph Sandbox["Sandbox: mcp"]
+        direction TB
+        Agent["Copilot agent<br/>network still locked down"]
+    end
+
+    subgraph Outside["Outside the sandbox"]
+        direction TB
+        Dhi["DHI MCP server<br/>dhi.io/mcp"]
+    end
+
+    You -->|"sbx mcp add, --static-mcp dhi"| McpRegistry
+    McpRegistry -->|configures| Gateway
+    Agent -->|tool calls| Gateway
+    Gateway -->|"calls, no network rule needed"| Dhi
+
+    %% Styles — containers
+    style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Sandbox fill:#f0faf4,stroke:#86c5a0,color:#00084D
+    style Outside fill:#fff7f0,stroke:#d4915e,color:#00084D
+
+    %% Styles — host nodes
+    style McpRegistry fill:#fff,stroke:#0DB7ED,color:#384D54
+    style Gateway fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+
+    %% Styles — sandbox nodes
+    style Agent fill:#e0f2e6,stroke:#6db88a,color:#384D54
+
+    %% Styles — external nodes
+    style Dhi fill:#fff0e5,stroke:#d4915e,color:#384D54
+
+    %% Styles — actor
+    style You fill:#fff,stroke:#1D63ED,color:#00084D
+```
+
 1. Register the DHI MCP server, from a terminal on your host:
 
     ```bash

@@ -2,6 +2,43 @@
 
 Sandboxes are network-isolated: your browser can't reach a server running inside one by default. `sbx ports` publishes a sandbox port on a host port.
 
+```mermaid
+graph LR
+    You(["You, in your browser"])
+
+    subgraph Host["Your machine"]
+        direction TB
+        Port3001["localhost:3001"]
+        Port8000["localhost:8000"]
+    end
+
+    subgraph Sandbox["Sandbox: quickstart"]
+        direction TB
+        Frontend["frontend :3000"]
+        Backend["backend :8000"]
+    end
+
+    You -->|opens the app| Port3001
+    You -->|API calls from the page| Port8000
+    Port3001 -->|"sbx ports --publish 3001:3000"| Frontend
+    Port8000 -->|"sbx ports --publish 8000:8000"| Backend
+
+    %% Styles — containers
+    style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Sandbox fill:#f0faf4,stroke:#86c5a0,color:#00084D
+
+    %% Styles — host nodes
+    style Port3001 fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Port8000 fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+
+    %% Styles — sandbox nodes
+    style Frontend fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style Backend fill:#e0f2e6,stroke:#6db88a,color:#384D54
+
+    %% Styles — actor
+    style You fill:#fff,stroke:#1D63ED,color:#00084D
+```
+
 ## Forward the API
 
 1. With the Docker Compose stack from the previous module still running (the `quickstart` sandbox must be running: see `sbx ls`), run the following in a terminal on your host:

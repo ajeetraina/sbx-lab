@@ -6,6 +6,46 @@ Everything in the previous module ran in **direct mode**: your agent edited your
 
 **Clone mode** gives your agent a private Git clone inside the sandbox, isolated from your working tree. You keep working normally while the agent works in its own clone. Afterwards you fetch its commits and review the diff before anything lands. Use it when you want a clean diff to review, or when you run several agents at the same time.
 
+```mermaid
+graph TD
+    You(["You"])
+
+    subgraph Host["Your machine"]
+        direction TB
+        Repo["Your repository<br/>committed code"]
+    end
+
+    subgraph Sandboxes["Clone-mode sandboxes, side by side"]
+        direction LR
+        FixBugs["fix-bugs<br/>private clone"]
+        AddSearch["add-search<br/>private clone"]
+        AddNotif["add-notif<br/>private clone"]
+    end
+
+    Repo -->|cloned into| FixBugs
+    Repo -->|cloned into| AddSearch
+    Repo -->|cloned into| AddNotif
+    FixBugs -->|git fetch sandbox-fix-bugs| Repo
+    AddSearch -->|git fetch sandbox-add-search| Repo
+    AddNotif -->|git fetch sandbox-add-notif| Repo
+    You -->|review and merge| Repo
+
+    %% Styles — containers
+    style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Sandboxes fill:#f0faf4,stroke:#86c5a0,color:#00084D
+
+    %% Styles — host nodes
+    style Repo fill:#fff,stroke:#0DB7ED,color:#384D54
+
+    %% Styles — sandbox nodes
+    style FixBugs fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style AddSearch fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style AddNotif fill:#e0f2e6,stroke:#6db88a,color:#384D54
+
+    %% Styles — actor
+    style You fill:#fff,stroke:#1D63ED,color:#00084D
+```
+
 > [!NOTE]
 > The clone starts from your **committed** code. Make sure the fix from the previous module is committed (`git log --oneline` should show it).
 
