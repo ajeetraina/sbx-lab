@@ -170,7 +170,7 @@ It declares two capabilities: a **lifecycle** hook that runs once when the sandb
 
     A new `kit` policy applies only to `sandbox:python-kit`. Inspect it (`sbx policy inspect <POLICY>`) to see Copilot's own hosts, plus the Debian and PyPI hosts your mixin declared.
 
-Because the kit is just a directory in a Git repository, anyone can use it straight from Git, for example `--kit "git+https://github.com/<YOUR-GITHUB-USERNAME>/sbx-lab.git#dir=project/kits/python"`.
+To share a kit, publish it in a Git repository or an OCI registry (`sbx kit push`). Remote kits are only installed from trusted publishers: `sbx` checks each reference against the `kit.allowedSources` setting (see `sbx settings get kit.allowedSources`). Someone using your kit as `--kit "git+https://github.com/<YOUR-GITHUB-USERNAME>/sbx-lab.git#dir=project/kits/python"` must first allow `github.com/<YOUR-GITHUB-USERNAME>/` there.
 
 ## Going further
 
