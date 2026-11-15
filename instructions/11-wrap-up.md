@@ -20,7 +20,7 @@ graph LR
 
     subgraph Lab["What the lab left on your machine"]
         direction TB
-        Sandboxes["Sandboxes<br/>quickstart, fix-bugs, add-search, add-notif, mcp, shell"]
+        Sandboxes["Sandboxes<br/>quickstart, fix-bugs, add-search, add-notif, mcp, trivy, shell"]
         McpRegistration["DHI MCP registration"]
         Secrets["github and copilot secrets"]
         Policy["Locked Down policy<br/>and the lab's rules"]
@@ -48,7 +48,7 @@ Remove the sandboxes created during the lab, along with everything inside them (
 
 ```bash
 sbx ls
-sbx rm quickstart fix-bugs add-search add-notif mcp
+sbx rm quickstart fix-bugs add-search add-notif mcp trivy
 ```
 
 `sbx rm` asks for confirmation (add `--force` to skip it). The sandbox created by `sbx run shell` in the network policies module is named after the folder you ran it from: remove it too, using the name shown by `sbx ls`. `sbx prune` removes all stopped sandboxes at once, including ones that aren't from this lab, so use it with care.

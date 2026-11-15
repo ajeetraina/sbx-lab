@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 # Adapted from the trivy kit of docker/sbx-kits-contrib (v3 branch, Apache-2.0):
 # https://github.com/docker/sbx-kits-contrib/tree/v3/trivy
-# Changes: shorter comments.
+# Changes: shorter comments, VEX repositories for Docker Hardened Images, and a
+# scan-images script.
 
 # The sandbox template: bash, the agent user (uid 1000), git and a CA store.
 FROM docker/sandbox-templates:shell-docker
@@ -35,8 +36,14 @@ RUN set -eu; \
     chmod 0755 /usr/local/bin/trivy; \
     trivy --version
 
+# A helper that scans images and prints one line per image.
+COPY --chmod=0755 scan-images.sh /usr/local/bin/scan-images
+
 # Back to the unprivileged user the sandbox runs as.
 USER agent
+
+# Let `trivy image --vex repo` apply the VEX statements of Docker Hardened Images.
+COPY --chown=agent:agent vex-repository.yaml /home/agent/.trivy/vex/repository.yaml
 
 # sbx reads this label as the sandbox's agent name.
 LABEL com.docker.sandboxes.flavor="trivy"

@@ -207,47 +207,62 @@ capabilities:
           - mirror.gcr.io
           - ghcr.io
           - pkg-containers.githubusercontent.com
+          - github.com
+          - api.github.com
+          - codeload.github.com
+          - raw.githubusercontent.com
 ```
 
-Next to it, [`trivy.dockerfile`](../project/kits/trivy/trivy.dockerfile) starts from the sandbox template, downloads Trivy 0.70.0, checks the download against its published SHA256, and opens a login shell. Compared with the Python kit:
+The first three hosts serve Trivy's vulnerability database. The GitHub hosts serve [VEX](https://docs.docker.com/dhi/explore/security-concepts/vex/) statements, which mark the CVEs that don't affect an image, including those published for Docker Hardened Images.
+
+Next to it, [`trivy.dockerfile`](../project/kits/trivy/trivy.dockerfile) builds the kit's image. It starts from the sandbox template, downloads Trivy 0.70.0, and checks the download against the SHA256 published for each architecture. It then adds two files from the kit's folder: [`scan-images.sh`](../project/kits/trivy/scan-images.sh), a helper that prints one summary line per scanned image, and [`vex-repository.yaml`](../project/kits/trivy/vex-repository.yaml), which tells Trivy where to find the VEX statements. Finally, it opens a login shell as the unprivileged `agent` user:
+
+```dockerfile
+# syntax=docker/dockerfile:1
+FROM docker/sandbox-templates:shell-docker
+
+ARG TRIVY_VERSION=0.70.0
+ARG TARGETARCH
+
+USER root
+RUN set -eu; \
+    case "${TARGETARCH}" in \
+      amd64) \
+        tarball="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"; \
+        sha256=8b4376d5d6befe5c24d503f10ff136d9e0c49f9127a4279fd110b727929a5aa9 ;; \
+      arm64) \
+        tarball="trivy_${TRIVY_VERSION}_Linux-ARM64.tar.gz"; \
+        sha256=2f6bb988b553a1bbac6bdd1ce890f5e412439564e17522b88a4541b4f364fc8d ;; \
+      *) echo "unsupported TARGETARCH: ${TARGETARCH} (expected amd64 or arm64)" >&2; exit 1 ;; \
+    esac; \
+    curl --proto '=https' --tlsv1.2 -fsSL -o /tmp/trivy.tgz \
+      "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${tarball}"; \
+    echo "${sha256}  /tmp/trivy.tgz" | sha256sum -c -; \
+    tar -C /usr/local/bin -xzf /tmp/trivy.tgz trivy; \
+    rm /tmp/trivy.tgz; \
+    chown 0:0 /usr/local/bin/trivy; \
+    chmod 0755 /usr/local/bin/trivy; \
+    trivy --version
+
+COPY --chmod=0755 scan-images.sh /usr/local/bin/scan-images
+
+USER agent
+COPY --chown=agent:agent vex-repository.yaml /home/agent/.trivy/vex/repository.yaml
+LABEL com.docker.sandboxes.flavor="trivy"
+ENTRYPOINT ["bash", "-l"]
+```
+
+Compared with the Python kit:
 
 | | Python kit | Trivy kit |
 |---|---|---|
 | Kind | `mixin`, added to the Copilot agent | `workload`: its own sandbox, a shell with no AI agent |
 | Installs its tool | When the sandbox is created (`lifecycle` hook) | When the kit is built (`trivy.dockerfile`), pinned by version and SHA256 |
-| Network policy | Debian hosts while installing, PyPI afterwards | Only Trivy's vulnerability database, never `github.com` |
+| Network policy | Debian hosts while installing, PyPI afterwards | Trivy's vulnerability database and the VEX statements, at runtime only |
 
-Why put a scanner in a sandbox? It reads all your code, and it's a supply-chain target like any other tool: Trivy's own releases were compromised in March 2026. In a sandbox, it sees the workspace but not your `~/.ssh` or `~/.docker/config.json`, and it can reach its database and nothing else.
+Why put a scanner in a sandbox? It reads all your code, and it's a supply-chain target like any other tool: Trivy's own releases were compromised in March 2026. In a sandbox, it sees the workspace but not your `~/.ssh` or `~/.docker/config.json`, and it can reach its database, the VEX statements and the hosts you allowed, nothing else.
 
-If you want to try it, run these commands from the root of the repository. Trivy downloads its vulnerability database, about 130 MB, on the first scan, so you may prefer to skip this on shared Wi-Fi:
-
-1. Create a sandbox from the kit, with the `project` folder as its workspace. The first time, `sbx` builds the kit's image, which downloads and checks Trivy (about a minute):
-
-    ```bash
-    sbx create --name trivy ./project/kits/trivy ./project
-    ```
-
-2. Scan DevBoard's dependencies:
-
-    ```bash
-    sbx exec trivy trivy fs --scanners vuln .
-    ```
-
-    Trivy reads `backend/requirements.txt` and `frontend/package-lock.json`. The results change as new vulnerabilities are published: at the time of writing, it reports one critical vulnerability in the backend's `python-jose` package.
-
-3. See what the scanner reached:
-
-    ```bash
-    sbx policy log trivy
-    ```
-
-    `mirror.gcr.io`, where the database comes from, is allowed. `check.trivy.dev`, Trivy's update check, is blocked: it isn't in the kit's network policy.
-
-4. Remove the sandbox:
-
-    ```bash
-    sbx rm --force trivy
-    ```
+You'll use this kit in [MCP servers](10-mcp-servers.md), to scan DevBoard's base images before and after switching them to Docker Hardened Images.
 
 The next two sections show two more ways to package what you just did. They're here so you know they exist: you don't need to run them, and the rest of the lab doesn't use them.
 
