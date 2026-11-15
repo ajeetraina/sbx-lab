@@ -76,7 +76,8 @@ project/
 │       └── lib/api.ts         # Axios API client
 ├── kits/
 │   ├── python/                # Mixin kit that adds Python to an agent's sandbox (Kits module)
-│   └── api-port/              # Mixin kit that publishes the API's port 8000 (Port forwarding module)
+│   ├── api-port/              # Mixin kit that publishes the API's port 8000 (Port forwarding module)
+│   └── trivy/                 # Workload kit that runs the Trivy scanner in its own sandbox (Kits module)
 ├── prompts/                   # Prompt files used by the parallel agents exercise
 └── docker-compose.yml
 ```

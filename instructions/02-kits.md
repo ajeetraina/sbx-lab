@@ -183,6 +183,72 @@ You'll use this kit to create the sandboxes your agents work in, in [Agent sandb
 
 To share a kit, publish it in a Git repository or an OCI registry (`sbx kit push`). Remote kits are only installed from trusted publishers: `sbx` checks each reference against the `kit.allowedSources` setting (see `sbx settings get kit.allowedSources`). For example, if you published this kit in your own GitHub repository, someone using it as `--kit "git+https://github.com/<YOUR-GITHUB-USERNAME>/<REPOSITORY>.git#dir=kits/python"` must first allow `github.com/<YOUR-GITHUB-USERNAME>/` there.
 
+## A kit with its own image: Trivy
+
+The Python kit installs its tool when the sandbox is created, so its network policy must open the Debian hosts during that install. A kit can also bring a Dockerfile and install its tools **when the kit itself is built**, on your machine, before any sandbox exists. The project includes a second kit made that way, [`project/kits/trivy/`](../project/kits/trivy/), adapted from Docker's [trivy kit](https://github.com/docker/sbx-kits-contrib/tree/v3/trivy). It runs [Trivy](https://trivy.dev/), Aqua's open source vulnerability scanner, in a sandbox of its own:
+
+```yaml
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: workload
+displayName: Trivy
+description: Aqua's open source vulnerability scanner, in its own sandbox
+sourceUrl: https://github.com/aquasecurity/trivy
+
+provides: ["trivy@0.70.0"]
+
+capabilities:
+  - type: com.docker.sandbox/sbx@1
+
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - mirror.gcr.io
+          - ghcr.io
+          - pkg-containers.githubusercontent.com
+```
+
+Next to it, [`trivy.dockerfile`](../project/kits/trivy/trivy.dockerfile) starts from the sandbox template, downloads Trivy 0.70.0, checks the download against its published SHA256, and opens a login shell. Compared with the Python kit:
+
+| | Python kit | Trivy kit |
+|---|---|---|
+| Kind | `mixin`, added to the Copilot agent | `workload`: its own sandbox, a shell with no AI agent |
+| Installs its tool | When the sandbox is created (`lifecycle` hook) | When the kit is built (`trivy.dockerfile`), pinned by version and SHA256 |
+| Network policy | Debian hosts while installing, PyPI afterwards | Only Trivy's vulnerability database, never `github.com` |
+
+Why put a scanner in a sandbox? It reads all your code, and it's a supply-chain target like any other tool: Trivy's own releases were compromised in March 2026. In a sandbox, it sees the workspace but not your `~/.ssh` or `~/.docker/config.json`, and it can reach its database and nothing else.
+
+If you want to try it, run these commands from the root of the repository. Trivy downloads its vulnerability database, about 130 MB, on the first scan, so you may prefer to skip this on shared Wi-Fi:
+
+1. Create a sandbox from the kit, with the `project` folder as its workspace. The first time, `sbx` builds the kit's image, which downloads and checks Trivy (about a minute):
+
+    ```bash
+    sbx create --name trivy ./project/kits/trivy ./project
+    ```
+
+2. Scan DevBoard's dependencies:
+
+    ```bash
+    sbx exec trivy trivy fs --scanners vuln .
+    ```
+
+    Trivy reads `backend/requirements.txt` and `frontend/package-lock.json`. The results change as new vulnerabilities are published: at the time of writing, it reports one critical vulnerability in the backend's `python-jose` package.
+
+3. See what the scanner reached:
+
+    ```bash
+    sbx policy log trivy
+    ```
+
+    `mirror.gcr.io`, where the database comes from, is allowed. `check.trivy.dev`, Trivy's update check, is blocked: it isn't in the kit's network policy.
+
+4. Remove the sandbox:
+
+    ```bash
+    sbx rm --force trivy
+    ```
+
 The next two sections show two more ways to package what you just did. They're here so you know they exist: you don't need to run them, and the rest of the lab doesn't use them.
 
 ## Combine kits into a kit set
