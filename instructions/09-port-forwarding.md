@@ -94,4 +94,97 @@ graph LR
 > [!IMPORTANT]
 > Ports are only reachable while the sandbox is running. A sandbox stops when no agent session is attached, so keep your agent session open, or start it without a session with `sbx run --detach --name quickstart`. Published ports are restored when the sandbox restarts.
 
+## Publish a port from a kit
+
+`sbx ports` publishes a port after the sandbox exists. A [kit](02-kits.md) can declare the ports its sandbox serves instead, with the `com.docker.sandbox/port@1` capability: the port is then published as soon as the sandbox is created, for everyone who uses the kit. The project includes a small mixin for the API's port, [`project/kits/api-port/api-port.yaml`](../project/kits/api-port/api-port.yaml):
+
+```yaml
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: mixin
+displayName: DevBoard API port
+description: Publishes the sandbox's port 8000, where the DevBoard API listens, to the host
+
+capabilities:
+  # Ask for the sandbox port only: sbx picks a free host port on 127.0.0.1.
+  - type: com.docker.sandbox/port@1
+    config:
+      container: 8000
+```
+
+There's one difference with `sbx ports --publish`: a kit only names the **sandbox** port. The **host** port is chosen by `sbx`, a free one on `127.0.0.1`, and chosen again each time the sandbox starts. That's on purpose: a kit is shared, and two kits asking for the same host port would collide. When the host port matters, as for DevBoard's API, which the browser calls at `localhost:8000`, you still pin it yourself with `sbx ports --publish`.
+
+```mermaid
+graph LR
+    You(["You, in your browser"])
+
+    subgraph Host["Your machine"]
+        direction TB
+        Pinned["localhost:8000<br/>you choose it"]
+        Ephemeral["127.0.0.1:random port<br/>sbx chooses it"]
+    end
+
+    subgraph Sandbox["Sandbox"]
+        direction TB
+        Service["service on :8000"]
+    end
+
+    Kit["Kit: port@1, container 8000"]
+
+    You -->|opens| Ephemeral
+    Kit -->|"published at sbx create"| Ephemeral
+    Ephemeral -->|forwards to| Service
+    Pinned -->|"sbx ports --publish 8000:8000"| Service
+
+    %% Styles — containers
+    style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Sandbox fill:#f0faf4,stroke:#86c5a0,color:#00084D
+
+    %% Styles — host nodes
+    style Pinned fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Ephemeral fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+
+    %% Styles — kit
+    style Kit fill:#fff,stroke:#0DB7ED,color:#384D54
+
+    %% Styles — sandbox nodes
+    style Service fill:#e0f2e6,stroke:#6db88a,color:#384D54
+
+    %% Styles — actor
+    style You fill:#fff,stroke:#1D63ED,color:#00084D
+```
+
+Try it in a separate sandbox, from the `project` directory, in another terminal. It takes a couple of minutes:
+
+1. Create a sandbox with the Python kit and the port kit:
+
+    ```bash
+    sbx create --name ports-demo --kit ./kits/python --kit ./kits/api-port copilot .
+    ```
+
+2. List its ports. You haven't published anything, yet port 8000 is already there, on a host port that `sbx` picked:
+
+    ```bash
+    sbx ports ports-demo
+    ```
+
+    ```console
+    HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL
+    127.0.0.1   60020       8000           tcp4
+    ```
+
+3. Start a small web server on port 8000 in the sandbox. It serves the project folder:
+
+    ```bash
+    sbx exec ports-demo sh -c 'nohup python3 -m http.server 8000 >/dev/null 2>&1 &'
+    ```
+
+4. Open `http://127.0.0.1:<HOST PORT>/`, with the host port from step 2: you see the files of the `project` folder, served from inside the sandbox.
+
+5. Remove the sandbox:
+
+    ```bash
+    sbx rm --force ports-demo
+    ```
+
 [[<< Previous: Docker inside the sandbox](08-docker-inside-the-sandbox.md) | [Next >> MCP servers](10-mcp-servers.md)]

@@ -74,7 +74,9 @@ project/
 │       ├── app/               # Next.js App Router pages (login, projects, project detail)
 │       ├── components/        # Shared UI components
 │       └── lib/api.ts         # Axios API client
-├── kits/python/               # Mixin kit that adds Python to an agent's sandbox (Kits module)
+├── kits/
+│   ├── python/                # Mixin kit that adds Python to an agent's sandbox (Kits module)
+│   └── api-port/              # Mixin kit that publishes the API's port 8000 (Port forwarding module)
 ├── prompts/                   # Prompt files used by the parallel agents exercise
 └── docker-compose.yml
 ```
