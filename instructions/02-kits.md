@@ -11,9 +11,6 @@ There are two kinds of kits:
 | Agent kit (`kind: sandbox`) | Defines the agent: its image, entrypoint, default arguments, and what it needs | `sbx/copilot`, `sbx/claude` |
 | Mixin | Extends an agent kit with a tool, a credential, a network rule, a file… | Added with `sbx create <agent> --kit <reference>` |
 
-> [!NOTE]
-> Kits are an experimental feature of `sbx`: the `sbx kit` commands and the `--kit` flag are marked as experimental.
-
 Run the commands of this module from the root of the repository.
 
 ## Inspect the Copilot kit
