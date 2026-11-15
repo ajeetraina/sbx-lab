@@ -29,13 +29,23 @@ If you don't want to keep the DHI MCP server, remove its registration:
 sbx mcp rm dhi
 ```
 
+Remove the GitHub token you stored in [Secrets and credentials](03-secrets-credentials.md) from your OS keychain:
+
+```bash
+sbx secret rm github -f
+```
+
+```bash
+sbx secret rm copilot -f
+```
+
 Your network policy is still **Locked Down**, with the rules you added for the lab (check with `sbx policy ls`). Keep it, adding hosts as your projects need them, or go back to the **Balanced** profile:
 
 ```bash
 sbx policy reset
 ```
 
-Then choose **Balanced** in the picker (non-interactive: `sbx policy reset --force && sbx policy init balanced`).
+Then choose **Balanced** in the picker. To do the same without the picker, run `sbx policy reset --force`, then `sbx policy init balanced`.
 
 ## Next steps
 

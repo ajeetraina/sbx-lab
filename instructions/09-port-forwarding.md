@@ -29,9 +29,6 @@ Sandboxes are network-isolated: your browser can't reach a server running inside
 > [!NOTE]
 > The browser calls the API directly at `http://localhost:8000`, which is why the API port must be published on the same port number, and why the API accepts requests from `http://localhost:3001`.
 
-> [!TIP]
-> After the pagination fix, all the issues of your project are listed. Before the fix, the project page showed "No issues found" until a project had more than 10 issues.
-
 ## Additional commands
 
 1. To list the ports published by a sandbox, run `sbx ports` with the sandbox name:

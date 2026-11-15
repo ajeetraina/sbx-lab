@@ -59,10 +59,10 @@ It's a small file, and it tells you a lot about the sandboxes you'll use in this
 
 | In the kit | What it means | Where you'll see it |
 |------------|---------------|---------------------|
-| `sandbox.image`, pinned by digest, built from Docker Hardened Images (`sourceURL`) | The sandbox's image: a minimal Debian image with the `agent` user and Docker, but no Python | [First sandbox](04-first-sandbox.md): you add Python with the kit you build below |
-| `entrypoint: copilot` | `sbx run` starts the Copilot CLI | [First sandbox](04-first-sandbox.md) |
-| `command.default: --yolo` | Copilot runs without asking for confirmations; arguments you pass after `--` are added to it | [First sandbox](04-first-sandbox.md), [Clone mode and parallel agents](07-parallel-agents.md) |
-| No policies (`Policies: none`) | The descriptor declares no network rules. `sbx` still allows Copilot's own core hosts for each Copilot sandbox, on top of the rules you added in [Network policies](01-network-policies.md) | [First sandbox](04-first-sandbox.md), with `sbx policy ls` |
+| `sandbox.image`, pinned by digest, built from Docker Hardened Images (`sourceURL`) | The sandbox's image: a minimal Debian image with the `agent` user and Docker, but no Python | [Agent sandbox](04-first-sandbox.md): you add Python with the kit you build below |
+| `entrypoint: copilot` | `sbx run` starts the Copilot CLI | [Agent sandbox](04-first-sandbox.md) |
+| `command.default: --yolo` | Copilot runs without asking for confirmations; arguments you pass after `--` are added to it | [Agent sandbox](04-first-sandbox.md), [Clone mode and parallel agents](07-parallel-agents.md) |
+| No policies (`Policies: none`) | The descriptor declares no network rules. `sbx` still allows Copilot's own core hosts for each Copilot sandbox, on top of the rules you added in [Network policies](01-network-policies.md) | [Agent sandbox](04-first-sandbox.md), with `sbx policy ls` |
 
 ## Compare with another agent kit
 
@@ -138,9 +138,9 @@ It declares two capabilities: a **lifecycle** hook that runs once when the sandb
         Commands:   1 install, 0 startup, 0 init files
     ```
 
-You'll use this kit to create the sandboxes your agents work in, in [First sandbox](04-first-sandbox.md) and [Clone mode and parallel agents](07-parallel-agents.md).
+You'll use this kit to create the sandboxes your agents work in, in [Agent sandbox](04-first-sandbox.md) and [Clone mode and parallel agents](07-parallel-agents.md).
 
-To share a kit, publish it in a Git repository or an OCI registry (`sbx kit push`). Remote kits are only installed from trusted publishers: `sbx` checks each reference against the `kit.allowedSources` setting (see `sbx settings get kit.allowedSources`). Someone using your kit as `--kit "git+https://github.com/<YOUR-GITHUB-USERNAME>/sbx-lab.git#dir=project/kits/python"` must first allow `github.com/<YOUR-GITHUB-USERNAME>/` there.
+To share a kit, publish it in a Git repository or an OCI registry (`sbx kit push`). Remote kits are only installed from trusted publishers: `sbx` checks each reference against the `kit.allowedSources` setting (see `sbx settings get kit.allowedSources`). For example, if you published this kit in your own GitHub repository, someone using it as `--kit "git+https://github.com/<YOUR-GITHUB-USERNAME>/<REPOSITORY>.git#dir=kits/python"` must first allow `github.com/<YOUR-GITHUB-USERNAME>/` there.
 
 ## Going further
 

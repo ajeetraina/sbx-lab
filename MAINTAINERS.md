@@ -41,6 +41,13 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 - The Python mixin (`project/kits/python/python.yaml`, v3 format) validates, inspects and installs Python at `sbx create` time (tested). `sbx kit pack` doesn't accept it: it requires a `spec.yaml`, an older artifact format, so the module doesn't use `pack`. Remote kits (Git or OCI) are refused unless their publisher is in `kit.allowedSources`; the module explains this rather than asking participants to change the setting.
 - `sbx kit inspect sbx/copilot` reports `Policies: none`, but every Copilot sandbox gets a `kit` policy allowing Copilot's own hosts (`api.*.githubcopilot.com`, `api.github.com`, `github.com`, `copilot.github.com`). The Copilot telemetry hosts and `cafe.github.com` aren't in it, which is one reason module 01 still allows `**.githubcopilot.com` and `**.github.com`.
 
+## Isolation checks in module 04 (partly checked with `sbx` v0.53.0)
+
+- Checked with `sbx exec` in an existing shell sandbox: `GH_TOKEN` is the placeholder `gho_sbxproxymanaged000000000000000000000`; `~` is the agent's own home (no `.ssh`) and only the workspace's own path is visible from the host's home folder; a blocked request prints `Approval required for <host>:<port>.` followed by `Review and respond with: sbx policy approval ls`.
+- Not checked yet: the exact message for the blocked HTTPS `POST` to `paste.rs` (the module expects `Approval required for paste.rs:443.`), and that it shows in `sbx policy log quickstart` and in the TUI's Network panel.
+- Not checked yet: the pre-meetup warm-up in module 00 (`sbx create` of a `shell` and a `copilot` sandbox, then `sbx rm`) keeps the template images cached, so that the lab's sandboxes start without a download; and how far a Copilot Free allowance goes through the lab's ~10 prompts.
+- The source files no longer label the intentional bugs with `# BUG:` comments, so that the agent has to find them; the tests still carry the hints.
+
 ## Roadmap ideas
 
 - Every agent sandbox that runs backend code (`quickstart` in module 04, and the clone-mode sandboxes of module 07) is created with the Python mixin; `--clone` and `--kit` work together (tested). The `mcp` sandbox (module 10) doesn't need Python. Next step: drop the "install Python" fallback from `AGENTS.md` and the global Debian and PyPI rules from module 01, after a deny-all run without those global rules (the kit's own network policy should be enough).
