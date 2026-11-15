@@ -59,10 +59,10 @@ It's a small file, and it tells you a lot about the sandboxes you'll use in this
 
 | In the kit | What it means | Where you'll see it |
 |------------|---------------|---------------------|
-| `sandbox.image`, pinned by digest, built from Docker Hardened Images (`sourceURL`) | The sandbox's image: a minimal Debian image with the `agent` user and Docker, but no Python | [Run in direct mode](06-run-in-direct-mode.md): the agent installs Python first |
+| `sandbox.image`, pinned by digest, built from Docker Hardened Images (`sourceURL`) | The sandbox's image: a minimal Debian image with the `agent` user and Docker, but no Python | [First sandbox](04-first-sandbox.md): you add Python with the kit you build below |
 | `entrypoint: copilot` | `sbx run` starts the Copilot CLI | [First sandbox](04-first-sandbox.md) |
 | `command.default: --yolo` | Copilot runs without asking for confirmations; arguments you pass after `--` are added to it | [First sandbox](04-first-sandbox.md), [Clone mode and parallel agents](07-parallel-agents.md) |
-| No policies (`Policies: none`) | The descriptor declares no network rules. `sbx` still allows Copilot's own core hosts for each Copilot sandbox, on top of the rules you added in [Network policies](01-network-policies.md) | Below, with `sbx policy ls` |
+| No policies (`Policies: none`) | The descriptor declares no network rules. `sbx` still allows Copilot's own core hosts for each Copilot sandbox, on top of the rules you added in [Network policies](01-network-policies.md) | [First sandbox](04-first-sandbox.md), with `sbx policy ls` |
 
 ## Compare with another agent kit
 
@@ -80,7 +80,7 @@ It uses more of the format than the Copilot kit:
 
 ## Build your own kit
 
-Writing a kit is mostly writing YAML. The DevBoard project includes a small mixin, [`project/kits/python/python.yaml`](../project/kits/python/python.yaml), that adds Python to an agent's sandbox: the step your agent would otherwise do by hand in [Run in direct mode](06-run-in-direct-mode.md).
+Writing a kit is mostly writing YAML. The DevBoard project includes a small mixin, [`project/kits/python/python.yaml`](../project/kits/python/python.yaml), that adds Python to an agent's sandbox, so your agent doesn't have to install it by hand.
 
 ```yaml
 # syntax=docker/sandbox-kit:3
@@ -138,47 +138,7 @@ It declares two capabilities: a **lifecycle** hook that runs once when the sandb
         Commands:   1 install, 0 startup, 0 init files
     ```
 
-3. Create a Copilot sandbox with the mixin added to the Copilot kit. There is no workspace path at the end: this sandbox doesn't need your files.
-
-    ```bash
-    sbx create --name python-kit --kit ./project/kits/python copilot
-    ```
-
-    The output shows the two kits being assembled, then the install commands, including yours:
-
-    ```none
-      Workspace:  none · no workspace bind mount
-      ...
-          $ Install Python 3, venv and pip (kit=python, user=0)
-          ✓ Install Python 3, venv and pip (kit=python, user=0, 16.2s)
-    ```
-
-    > [!NOTE]
-    > This sandbox doesn't run an agent, so it doesn't need the credentials you'll store in the next module.
-
-4. Python is ready, before any agent runs:
-
-    ```bash
-    sbx exec python-kit python3 --version
-    ```
-
-    ```none
-    Python 3.13.5
-    ```
-
-5. Look at the policies:
-
-    ```bash
-    sbx policy ls
-    ```
-
-    A new `kit` policy applies only to `sandbox:python-kit`. Inspect it (`sbx policy inspect <POLICY>`) to see Copilot's own hosts, plus the apt and PyPI hosts your mixin declared. These rules add to your **Locked Down** policy, for this sandbox only.
-
-6. Remove the sandbox, you won't need it in the rest of the lab:
-
-    ```bash
-    sbx rm --force python-kit
-    ```
+You'll use this kit in [First sandbox](04-first-sandbox.md), to create the sandbox your agent works in.
 
 To share a kit, publish it in a Git repository or an OCI registry (`sbx kit push`). Remote kits are only installed from trusted publishers: `sbx` checks each reference against the `kit.allowedSources` setting (see `sbx settings get kit.allowedSources`). Someone using your kit as `--kit "git+https://github.com/<YOUR-GITHUB-USERNAME>/sbx-lab.git#dir=project/kits/python"` must first allow `github.com/<YOUR-GITHUB-USERNAME>/` there.
 

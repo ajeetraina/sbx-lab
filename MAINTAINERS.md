@@ -43,5 +43,5 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 
 ## Roadmap ideas
 
-- Use the Python mixin (`project/kits/python`) from the first sandbox (module 04) onwards (`sbx create ... --kit ./kits/python`), to replace the "install Python" instructions in `AGENTS.md` and the Debian and PyPI rules of module 01.
+- The first sandbox (`quickstart`, module 04) is created with the Python mixin (`--kit ./kits/python`). The clone-mode sandboxes of module 07 aren't, so they still rely on the "install Python" fallback in `AGENTS.md`, and module 01 still allows the Debian and PyPI hosts globally. Next step: add the kit to the module 07 commands (untested with `--clone`), then drop the fallback.
 - Add a final module: VS Code, SSH, and a sandbox.
