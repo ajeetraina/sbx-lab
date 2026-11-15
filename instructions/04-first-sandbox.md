@@ -10,10 +10,21 @@ The `sbx create` command provisions a sandbox without attaching to it. This is u
     cd project
     ```
 
-2. Create your first sandbox with the `sbx create` command. The workspace path (`.`) is required: it is the folder that gets mounted into the sandbox.
+2. Create your first sandbox with the `sbx create` command. `--kit` adds the Python kit you built in [Kits](02-kits.md) to the Copilot kit, and the workspace path (`.`) is the folder that gets mounted into the sandbox:
 
     ```bash
-    sbx create --name quickstart copilot .
+    sbx create --name quickstart --kit ./kits/python copilot .
+    ```
+
+    The output shows both kits being assembled, then the install commands, including the one from your kit:
+
+    ```none
+      Kits:       docker.io/sbx/copilot@sha256:f9c2331f...
+                  ./kits/python
+      ...
+        running 3 install commands
+          ...
+          $ Install Python 3, venv and pip (kit=python, user=0)
     ```
 
     > [!NOTE]
@@ -25,7 +36,25 @@ The `sbx create` command provisions a sandbox without attaching to it. This is u
     sbx ls
     ```
 
-4. With the sandbox created, start an agent in it and attach to it:
+4. Python is already installed, before any agent runs:
+
+    ```bash
+    sbx exec quickstart python3 --version
+    ```
+
+    ```none
+    Python 3.13.5
+    ```
+
+5. Look at the policies:
+
+    ```bash
+    sbx policy ls
+    ```
+
+    A new `kit` policy applies only to `sandbox:quickstart`. Inspect it (`sbx policy inspect <POLICY>`) to see Copilot's own hosts, plus the apt and PyPI hosts your kit declared. These rules add to your **Locked Down** policy, for this sandbox only.
+
+6. With the sandbox created, start an agent in it and attach to it:
 
     ```bash
     sbx run --name quickstart
@@ -36,7 +65,7 @@ The `sbx create` command provisions a sandbox without attaching to it. This is u
     > [!IMPORTANT]
     > `--yolo` allows Copilot to run tools without individual confirmations. The sandbox limits what the agent can reach, but you should still review the agent's actions and changes.
 
-5. Ask the agent to tell you about the project:
+7. Ask the agent to tell you about the project:
 
     ```console
     Explore this codebase and give me:
@@ -57,4 +86,4 @@ The `sbx create` command provisions a sandbox without attaching to it. This is u
 
 Go ahead and exit the session by pressing **`Ctrl-C` twice**.
 
-[[<< Previous: Secrets and credentials](02-secrets-credentials.md) | [Next >> TUI dashboard](04-tui-dashboard.md)]
+[[<< Previous: Secrets and credentials](03-secrets-credentials.md) | [Next >> TUI dashboard](05-tui-dashboard.md)]

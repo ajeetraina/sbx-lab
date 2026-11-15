@@ -13,10 +13,11 @@ See [`README.md`](README.md) for how to run it.
 ## Sandbox environment
 
 You are most likely running in a Docker Sandbox (a Linux microVM, user `agent`, with `sudo`). Its image has
-**no Python and no Node.js**, and the network is locked down: only GitHub, Copilot, Debian packages (`apt`), PyPI, Docker Hub and
-npm are allowed. If a download is blocked, tell the user which host it needs instead of working around it.
+**no Node.js**, and **no Python** unless the sandbox was created with the lab's Python kit (`project/kits/python`).
+The network is locked down: only GitHub, Copilot, Debian packages (`apt`), PyPI, Docker Hub and npm are allowed.
+If a download is blocked, tell the user which host it needs instead of working around it.
 
-- Install Python once, before running any backend command:
+- If `python3` is missing, install it once, before running any backend command:
   `sudo apt-get update && sudo apt-get install -y python3 python3-venv python3-pip`
 - Create the virtual environment **outside the workspace** (the workspace is a folder shared with the host,
   which must stay clean): `python3 -m venv ~/venv && ~/venv/bin/pip install -r backend/requirements.txt`

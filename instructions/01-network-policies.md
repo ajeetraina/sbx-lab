@@ -209,10 +209,10 @@ sbx policy allow network "registry.npmjs.org"
 |------|---------|--------|
 | `github.com`, `**.github.com` | GitHub API, used by Copilot | all agent modules |
 | `**.githubcopilot.com` | Copilot service; the subdomain depends on your plan (`api.individual…`, `api.business…`, `api.enterprise…`), hence `**` | all agent modules |
-| `deb.debian.org`, `dhi.io` | Installing Python with `apt` in the sandbox (the sandbox image doesn't include it) | [05](05-run-in-direct-mode.md), [06](06-parallel-agents.md) |
-| `pypi.org`, `files.pythonhosted.org` | Installing the backend's Python packages | 05, 06, [07](07-docker-inside-the-sandbox.md) |
-| `**.docker.io`, `production.cloudfront.docker.com` | Pulling the `python`, `node` and `postgres` images from Docker Hub | 07 |
-| `registry.npmjs.org` | Installing the frontend's npm packages | 07 |
+| `deb.debian.org`, `dhi.io` | The sandbox image's `apt` repositories (Debian and Docker Hardened Images), used to install Python, which the image doesn't include. The Python kit you'll build in the next module declares them too, for the sandboxes that use it | [Kits](02-kits.md), [Run in direct mode](06-run-in-direct-mode.md) |
+| `pypi.org`, `files.pythonhosted.org` | Installing the backend's Python packages | Run in direct mode, Clone mode, [Docker inside the sandbox](08-docker-inside-the-sandbox.md) |
+| `**.docker.io`, `production.cloudfront.docker.com` | Pulling the `python`, `node` and `postgres` images from Docker Hub | Docker inside the sandbox |
+| `registry.npmjs.org` | Installing the frontend's npm packages | Docker inside the sandbox |
 
 The hosts have no port suffix on purpose: `apt` downloads from Debian over HTTP (port 80).
 
@@ -241,4 +241,4 @@ The first two are `Allowed`; `docker.com` is still `Denied`, because you removed
 > [!TIP]
 > If an agent later fails to download something, run `sbx policy log` to see the blocked host, then allow it with `sbx policy allow network <host>`.
 
-[[<< Previous: Prerequisites](00-prerequisites.md) | [Next >> Secrets and credentials](02-secrets-credentials.md)]
+[[<< Previous: Prerequisites](00-prerequisites.md) | [Next >> Kits](02-kits.md)]

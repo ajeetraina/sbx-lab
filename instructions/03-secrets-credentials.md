@@ -2,7 +2,7 @@
 
 `sbx` has a built-in secrets manager that stores credentials in your OS keychain, never in plain text on disk or inside the VM. When your agent makes an outbound request that needs authentication, the host-side proxy intercepts it and injects the credential automatically. Your agent can make authenticated API calls but can never read, log, or exfiltrate the raw credential.
 
-1. Store your GitHub token **now**, before creating a sandbox. Secrets are **global** by default, which means they are available to every sandbox you create. Here the token is resolved from the GitHub CLI each time it is needed:
+1. Store your GitHub token **now**, before creating the sandboxes your agents will use. Secrets are **global** by default, which means they are available to every sandbox you create. Here the token is resolved from the GitHub CLI each time it is needed:
 
     ```bash
     sbx secret set github --command 'gh auth token'
@@ -29,4 +29,4 @@
     (global)   service   copilot   (stored)
     ```
 
-[[<< Previous: Network policies](01-network-policies.md) | [Next >> First sandbox](03-first-sandbox.md)]
+[[<< Previous: Kits](02-kits.md) | [Next >> First sandbox](04-first-sandbox.md)]
