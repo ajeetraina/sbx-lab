@@ -4,7 +4,7 @@
 
 In this hands-on lab you will use GitHub Copilot inside a [Docker Sandbox](https://docs.docker.com/ai/sandboxes/) to work on **DevBoard**, a small issue tracker (FastAPI + Next.js) located in the [`project/`](project/) folder. Along the way you will see how sandboxes keep your machine, your files and your credentials safe while an AI agent does real work.
 
-**Duration:** about 60-90 minutes.
+**Duration:** about 90 minutes.
 
 ## What you will learn
 

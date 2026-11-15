@@ -138,7 +138,7 @@ It declares two capabilities: a **lifecycle** hook that runs once when the sandb
         Commands:   1 install, 0 startup, 0 init files
     ```
 
-You'll use this kit in [First sandbox](04-first-sandbox.md), to create the sandbox your agent works in.
+You'll use this kit to create the sandboxes your agents work in, in [First sandbox](04-first-sandbox.md) and [Clone mode and parallel agents](07-parallel-agents.md).
 
 To share a kit, publish it in a Git repository or an OCI registry (`sbx kit push`). Remote kits are only installed from trusted publishers: `sbx` checks each reference against the `kit.allowedSources` setting (see `sbx settings get kit.allowedSources`). Someone using your kit as `--kit "git+https://github.com/<YOUR-GITHUB-USERNAME>/sbx-lab.git#dir=project/kits/python"` must first allow `github.com/<YOUR-GITHUB-USERNAME>/` there.
 

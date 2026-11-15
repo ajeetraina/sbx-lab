@@ -51,7 +51,7 @@ Every exercise depends on `sbx` running correctly on your computer. **Do not ski
     sbx policy ls
     ```
 
-    Every policy should have `local` as its `SOURCE`. The output looks similar to this:
+    Every policy should have `local` as its `SOURCE` (or `kit`, for a policy that applies to a single sandbox you created before). The output looks similar to this:
 
     ```none
     POLICY             SOURCE   APPLIES TO   SUMMARY
@@ -59,7 +59,7 @@ Every exercise depends on `sbx` running correctly on your computer. **Do not ski
     local-policy       local    all          network: 195 allow; filesystem read: 1 allow; filesystem write: 1 allow
     ```
 
-    If you see policies from another source, your organization restricts what sandboxes can do and some exercises may not work. Use a personal Docker account or ask your administrator for guidance.
+    If you see policies from any other source, your organization restricts what sandboxes can do and some exercises may not work. Use a personal Docker account or ask your administrator for guidance.
 
 You're all set! Move on to the next module.
 

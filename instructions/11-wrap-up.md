@@ -21,7 +21,7 @@ sbx ls
 sbx rm quickstart fix-bugs add-search add-notif mcp
 ```
 
-`sbx rm` asks for confirmation (add `--force` to skip it). The sandbox created by `sbx run shell` in the network policies module is named after the folder you ran it from: remove it too, using the name shown by `sbx ls`. You can also remove all stopped sandboxes at once with `sbx prune`.
+`sbx rm` asks for confirmation (add `--force` to skip it). The sandbox created by `sbx run shell` in the network policies module is named after the folder you ran it from: remove it too, using the name shown by `sbx ls`. `sbx prune` removes all stopped sandboxes at once, including ones that aren't from this lab, so use it with care.
 
 If you don't want to keep the DHI MCP server, remove its registration:
 

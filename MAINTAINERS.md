@@ -43,5 +43,5 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 
 ## Roadmap ideas
 
-- The first sandbox (`quickstart`, module 04) is created with the Python mixin (`--kit ./kits/python`). The clone-mode sandboxes of module 07 aren't, so they still rely on the "install Python" fallback in `AGENTS.md`, and module 01 still allows the Debian and PyPI hosts globally. Next step: add the kit to the module 07 commands (untested with `--clone`), then drop the fallback.
+- Every agent sandbox that runs backend code (`quickstart` in module 04, and the clone-mode sandboxes of module 07) is created with the Python mixin; `--clone` and `--kit` work together (tested). The `mcp` sandbox (module 10) doesn't need Python. Next step: drop the "install Python" fallback from `AGENTS.md` and the global Debian and PyPI rules from module 01, after a deny-all run without those global rules (the kit's own network policy should be enough).
 - Add a final module: VS Code, SSH, and a sandbox.

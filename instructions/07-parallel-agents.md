@@ -20,10 +20,10 @@ Everything in the previous module ran in **direct mode**: your agent edited your
     > [!IMPORTANT]
     > Clone mode must be started from the root of the Git repository. From the `project` folder, `sbx` stops with the error `--clone requires a Git repository`. The agent therefore sees the whole repository, with the application in the `project/` folder.
 
-2. Start a new agent in clone mode with the `--clone` flag. Give it a name: it also names the Git remote that you will fetch from later.
+2. Start a new agent in clone mode with the `--clone` flag. Give it a name: it also names the Git remote that you will fetch from later. As for `quickstart`, add the Python kit (from the root of the repository, its path is `./project/kits/python`):
 
     ```bash
-    sbx run copilot --clone --name fix-bugs
+    sbx run copilot --clone --name fix-bugs --kit ./project/kits/python
     ```
 
     The agent works inside a private Git clone, and your own working tree is only available to it read-only.
@@ -44,7 +44,7 @@ Everything in the previous module ran in **direct mode**: your agent edited your
     The sandbox exposes its clone as a Git remote named `sandbox-<name>`, and its branches are named `sandbox-<name>/<branch>`, where `<branch>` is the branch that was checked out when the sandbox was created (typically `main`). Review the commits, then merge or cherry-pick them as you normally would:
 
     ```bash
-    git merge sandbox-fix-bugs/main
+    git merge --no-edit sandbox-fix-bugs/main
     ```
 
     > [!NOTE]
@@ -67,7 +67,7 @@ The [`project/prompts/`](../project/prompts) directory contains a ready-made pro
 1. In a new terminal, from the root of the repository, start an agent that implements search:
 
     ```bash terminal-id=parallel-agent-1
-    sbx run copilot --clone --name add-search -- -i "$(cat project/prompts/implement-search.txt)"
+    sbx run copilot --clone --name add-search --kit ./project/kits/python -- -i "$(cat project/prompts/implement-search.txt)"
     ```
 
     > [!IMPORTANT]
@@ -76,7 +76,7 @@ The [`project/prompts/`](../project/prompts) directory contains a ready-made pro
 2. In another terminal, again from the root of the repository, start a second agent that implements notifications:
 
     ```bash
-    sbx run copilot --clone --name add-notif -- -i "$(cat project/prompts/implement-notifications.txt)"
+    sbx run copilot --clone --name add-notif --kit ./project/kits/python -- -i "$(cat project/prompts/implement-notifications.txt)"
     ```
 
 Each sandbox gets its own isolated Git clone, so the agents read and write completely separate copies of the code. You can see both in `sbx ls`, and watch each agent's progress in its own terminal. Copilot already runs with `--yolo` by default, so the agents don't wait for confirmation.
@@ -109,11 +109,11 @@ After fetching, each agent's commits are available as remote-tracking branches, 
 2. Merge each agent's branch into your working branch:
 
     ```bash
-    git merge sandbox-add-search/main
-    git merge sandbox-add-notif/main
+    git merge --no-edit sandbox-add-search/main
+    git merge --no-edit sandbox-add-notif/main
     ```
 
-    If both agents changed the same files you may get a merge conflict. Resolve it as you would any other conflict, then run `git merge --continue`.
+    `--no-edit` keeps Git's default merge message instead of opening an editor. If both agents changed the same files you may get a merge conflict. Resolve it as you would any other conflict, then run `git merge --continue`.
 
 3. Check that the merged result works. Reconnect to your `quickstart` sandbox, whose workspace is your working tree:
 

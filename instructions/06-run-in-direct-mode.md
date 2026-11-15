@@ -20,7 +20,7 @@ In this exercise your agent works in **direct mode**, the default, where its edi
     Use pytest with verbose output: cd backend && pytest tests/ -v
     ```
 
-    This takes about 3-4 minutes. You should see **3 failing tests**, **1 expected failure (`xfail`)**, and all the others passing:
+    Python is already in the sandbox, thanks to the kit, so this takes a minute or two. You should see **3 failing tests**, **1 expected failure (`xfail`)**, and all the others passing:
 
     | Test                                         | Status  | Cause                                       |
     |----------------------------------------------|---------|---------------------------------------------|
