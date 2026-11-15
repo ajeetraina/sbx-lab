@@ -63,7 +63,7 @@ It's a small file, and it explains several things you saw in this lab:
 | `sandbox.image`, pinned by digest, built from Docker Hardened Images (`sourceURL`) | The sandbox's image: a minimal Debian image with the `agent` user and Docker, but no Python | [05](05-run-in-direct-mode.md): the agent had to install Python |
 | `entrypoint: copilot` | `sbx run` starts the Copilot CLI | [03](03-first-sandbox.md) |
 | `command.default: --yolo` | Copilot runs without asking for confirmations; arguments you pass after `--` are added to it | [03](03-first-sandbox.md), [06](06-parallel-agents.md) |
-| No policies (`Policies: none`) | The kit allows no network destinations of its own | [01](01-network-policies.md): you allowed Copilot's hosts yourself |
+| No policies (`Policies: none`) | The descriptor declares no network rules. `sbx` still allows Copilot's own hosts for each Copilot sandbox (see `sbx policy ls` below) | [01](01-network-policies.md) |
 
 ## Compare with another agent kit
 
@@ -79,10 +79,103 @@ It uses more of the format than the Copilot kit:
 - **Environment variables** (`Policies: Environment: 2 variables`), set inside the sandbox.
 - An **AI file** (`/home/agent/.claude/CLAUDE.md`), where context for the agent is placed.
 
+## Build your own kit
+
+Writing a kit is mostly writing YAML. The DevBoard project includes a small mixin, [`kits/python/python.yaml`](../project/kits/python/python.yaml), that adds Python to an agent's sandbox: the step your agent had to do by hand in [module 05](05-run-in-direct-mode.md).
+
+```yaml
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: mixin
+displayName: Python
+description: Python 3 with venv and pip, installed when the sandbox is created
+
+capabilities:
+  # Install Python once, as root, when the sandbox is created.
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        - description: Install Python 3, venv and pip
+          user: "0"
+          command: apt-get update && apt-get install -y --no-install-recommends python3 python3-venv python3-pip
+
+  # Only the hosts Python needs: Debian packages while installing, PyPI afterwards.
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      install:
+        allow: [deb.debian.org, dhi.io]
+      runtime:
+        allow: [pypi.org, files.pythonhosted.org]
+```
+
+It declares two capabilities: a **lifecycle** hook that runs once when the sandbox is created, and a **network policy** that opens only the hosts Python needs. No Dockerfile is needed for this one.
+
+1. From the `project` directory, check that the kit is valid:
+
+    ```bash
+    sbx kit validate ./kits/python
+    ```
+
+    ```none
+      ✓ ./kits/python — valid (directory)
+    ```
+
+2. See what it declares:
+
+    ```bash
+    sbx kit inspect ./kits/python
+    ```
+
+    ```none
+      Name:         python
+      Kind:         mixin
+      Schema:       v3
+      Display:      Python
+      Description:  Python 3 with venv and pip, installed when the sandbox is created
+      Policies:
+        Network:    2 allow, 0 deny
+        Commands:   1 install, 0 startup, 0 init files
+    ```
+
+3. Create a Copilot sandbox with the mixin added to the Copilot kit:
+
+    ```bash
+    sbx create --name python-kit --kit ./kits/python copilot .
+    ```
+
+    The output shows the two kits being assembled, then the install commands, including yours:
+
+    ```none
+      ✓ assembled kit image (3 layers)
+        running 3 install commands
+          ...
+          $ Install Python 3, venv and pip (kit=python, user=0)
+    ```
+
+4. Python is ready, before any agent runs:
+
+    ```bash
+    sbx exec python-kit python3 --version
+    ```
+
+    ```none
+    Python 3.13.5
+    ```
+
+5. Look at the policies:
+
+    ```bash
+    sbx policy ls
+    ```
+
+    A new `kit` policy applies only to `sandbox:python-kit`. Inspect it (`sbx policy inspect <POLICY>`) to see Copilot's own hosts, plus the Debian and PyPI hosts your mixin declared.
+
+Because the kit is just a directory in a Git repository, anyone can use it straight from Git, for example `--kit "git+https://github.com/<YOUR-GITHUB-USERNAME>/sbx-lab.git#dir=project/kits/python"`.
+
 ## Going further
 
 - **Extend an agent with a mixin**: `sbx run copilot --kit ./my-mixin/`. A mixin can come from a local directory, a ZIP file, a Git repository or an OCI registry.
-- **Build and share your own kits**: `sbx kit validate`, `sbx kit pack`, `sbx kit push` and `sbx kit pull`, and `sbx kit sign` and `sbx kit verify` to sign and check them.
+- **Share your kits**: `sbx kit push` and `sbx kit pull` (OCI registries), and `sbx kit sign` and `sbx kit verify` to sign and check them.
 - Read the [Docker Sandbox Kit specification](https://github.com/docker/sandbox-kit-spec) to see everything a kit can declare.
 
 [[<< Previous: MCP servers](09-mcp-servers.md) | [Next >> Wrap up](11-wrap-up.md)]

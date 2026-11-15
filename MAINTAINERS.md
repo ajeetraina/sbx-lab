@@ -38,8 +38,10 @@ This repository is the **Docker Sandboxes with GitHub Copilot Lab**: a guided la
 
 - Module 10 shows `sbx kit inspect sbx/copilot` (table and `--format yaml`) and compares with `sbx/claude`. The sample outputs include image digests, which change when the kits are updated.
 - The `sbx` CLI shows agent kits as `kind: sandbox` with a `sandbox:` block (image, entrypoint, command), while the [kit specification](https://github.com/docker/sandbox-kit-spec) repository describes `workload` and `mixin` kits with `capabilities:`. The module sticks to what `sbx` shows and links the specification.
+- The Python mixin (`project/kits/python/python.yaml`, v3 format) validates, inspects and installs Python at `sbx create` time (tested). `sbx kit pack` doesn't accept it: it requires a `spec.yaml`, an older artifact format, so the module doesn't use `pack`.
+- `sbx kit inspect sbx/copilot` reports `Policies: none`, but every Copilot sandbox gets a `kit` policy allowing Copilot's own hosts (`api.*.githubcopilot.com`, `api.github.com`, `github.com`, `copilot.github.com`). The Copilot telemetry hosts and `cafe.github.com` aren't in it, which is one reason module 01 still allows `**.githubcopilot.com` and `**.github.com`.
 
 ## Roadmap ideas
 
-- A mixin kit that adds Python to the Copilot sandbox (and declares PyPI and Debian in its network policy), to replace the "install Python" instructions in `AGENTS.md`.
+- Use the Python mixin (`project/kits/python`) from module 03 onwards (`sbx create ... --kit ./kits/python`), to replace the "install Python" instructions in `AGENTS.md` and the Debian and PyPI rules of module 01.
 - Add a final module: VS Code, SSH, and a sandbox.
