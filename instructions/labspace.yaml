@@ -1,0 +1,38 @@
+# Labspace definition of the lab, rendered with a terminal on your own machine.
+# See ../labspace-local/README.md to start it.
+metadata:
+  id: mathieu-benoit/sbx-lab
+  sourceRepo: github.com/mathieu-benoit/sbx-lab
+  contentVersion: local
+
+title: Docker Sandboxes with GitHub Copilot
+description: >
+  Run GitHub Copilot in Docker Sandboxes on DevBoard, with the commands running in a terminal on your own machine.
+
+sections:
+  - title: Prerequisites
+    contentPath: 00-prerequisites.md
+  - title: Network policies
+    contentPath: 01-network-policies.md
+  - title: Kits
+    contentPath: 02-kits.md
+  - title: Secrets and credentials
+    contentPath: 03-secrets-credentials.md
+  - title: Agent sandbox
+    contentPath: 04-first-sandbox.md
+  - title: TUI dashboard
+    contentPath: 05-tui-dashboard.md
+  - title: Run in direct mode
+    contentPath: 06-run-in-direct-mode.md
+  - title: Clone mode and parallel agents
+    contentPath: 07-parallel-agents.md
+  - title: Docker inside the sandbox
+    contentPath: 08-docker-inside-the-sandbox.md
+  - title: Port forwarding
+    contentPath: 09-port-forwarding.md
+  - title: MCP servers
+    contentPath: 10-mcp-servers.md
+  - title: Wrap up
+    contentPath: 11-wrap-up.md
+  - title: Troubleshooting
+    contentPath: troubleshooting.md
