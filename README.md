@@ -102,7 +102,7 @@ Because the agent can't step outside these doors, you can let it work without ap
 | 07 | [Clone mode and parallel agents](instructions/07-parallel-agents.md) | Run isolated agents side by side and merge their work | 20 min |
 | 08 | [Docker inside the sandbox](instructions/08-docker-inside-the-sandbox.md) | Start the full app with Docker Compose in a sandbox | 8 min |
 | 09 | [Port forwarding](instructions/09-port-forwarding.md) | Open the app running in the sandbox in your browser | 5 min |
-| 10 | [MCP servers](instructions/10-mcp-servers.md) | Give your agent a tool without opening its network | 8 min |
+| 10 | [MCP servers](instructions/10-mcp-servers.md) | Give your agent a tool without opening its network, then scan the images it suggests | 12 min |
 | 11 | [Wrap up](instructions/11-wrap-up.md) | Clean up and find out where to go next | 3 min |
 
 Stuck? See [Troubleshooting](instructions/troubleshooting.md).

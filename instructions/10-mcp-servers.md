@@ -69,13 +69,13 @@ graph LR
     dhi    remote http   ready    LOCAL, managed by you
     ```
 
-3. From the `project` directory, create a dedicated sandbox named `mcp`, with the DHI server:
+3. From the `project` directory, create a dedicated sandbox named `mcp`, with the DHI server and the Trivy kit:
 
     ```bash
-    sbx create --name mcp --static-mcp dhi copilot .
+    sbx create --name mcp --static-mcp dhi --kit ./kits/trivy copilot .
     ```
 
-    `--static-mcp dhi` starts the sandbox's MCP gateway with **exactly this server**, and without the discovery tools an agent could use to find and add servers by itself. You decide which servers it gets.
+    `--static-mcp dhi` starts the sandbox's MCP gateway with **exactly this server**, and without the discovery tools an agent could use to find and add servers by itself. You decide which servers it gets. `--kit ./kits/trivy` adds the [Trivy kit](02-kits.md#a-kit-with-its-own-image-trivy) from the Kits module, which you'll use at the end of this module. The first time, `sbx` builds the kit's image, which downloads and checks Trivy (about a minute).
 
 4. Start an agent in the `mcp` sandbox:
 
@@ -104,5 +104,38 @@ graph LR
 
 > [!WARNING]
 > Registering an MCP server is a trust decision. It runs outside the sandbox, with your host's permissions (local servers) or under the remote service's control, so the sandbox's network policy doesn't apply to it. Only register servers you trust.
+
+## Scan the images before and after
+
+Before switching DevBoard's Dockerfiles to the hardened images, measure what you'd gain. The Trivy kit you added to the `mcp` sandbox can scan the current base images and their DHI equivalents.
+
+1. Scan the two current base images and the two hardened images the agent suggested, with the kit's `scan-images` helper. `sbx exec` starts the sandbox again if it's stopped:
+
+    ```bash
+    sbx exec mcp scan-images python:3.12-slim dhi.io/python:3.12 node:22-alpine dhi.io/node:22-alpine
+    ```
+
+    For each image, the helper runs `trivy image --image-src remote --scanners vuln --vex repo`: Trivy reads the image straight from its registry and applies the [VEX](https://docs.docker.com/dhi/explore/security-concepts/vex/) statements, which mark the CVEs that don't affect the image. The first scan also downloads Trivy's vulnerability database, about 130 MB, and the VEX statements, so it takes a minute or two.
+
+    The numbers change as new vulnerabilities are published. At the time of writing:
+
+    ```none
+    python:3.12-slim         85 vulnerabilities (0 critical, 15 high)
+    dhi.io/python:3.12       51 vulnerabilities (0 critical, 7 high)
+    node:22-alpine           16 vulnerabilities (0 critical, 6 high)
+    dhi.io/node:22-alpine    0 vulnerabilities (0 critical, 0 high)
+    ```
+
+    Without the VEX statements, Trivy reports 215, 93, 24 and 0: it counts every published CVE that matches a package version, whether or not it affects the image.
+
+2. See what the scanner reached:
+
+    ```bash
+    sbx policy log mcp
+    ```
+
+    Docker Hub and `dhi.io` were allowed by the rules you added in [Network policies](01-network-policies.md). `mirror.gcr.io`, where the database comes from, and the GitHub hosts that serve the VEX statements were allowed by the kit's own rules, which apply to this sandbox only. `check.trivy.dev`, Trivy's update check, is blocked: neither the kit nor your rules allow it.
+
+The scanner read the images, not your machine: it never had your Docker credentials, your `~/.ssh` folder or any host outside its rules. And because Trivy is now in the agent's sandbox, the agent can use it too: next time, you could ask it to scan the images it suggests.
 
 [[<< Previous: Port forwarding](09-port-forwarding.md) | [Next >> Wrap up](11-wrap-up.md)]

@@ -1,0 +1,31 @@
+# syntax=docker/sandbox-kit:3
+# Adapted from the trivy-mixin kit of docker/sbx-kits-contrib (v3 branch, Apache-2.0):
+# https://github.com/docker/sbx-kits-contrib/tree/v3/trivy-mixin
+# Changes: shorter comments, no agent-context capability, VEX repositories for
+# Docker Hardened Images, and a scan-images script.
+schemaVersion: "3"
+kind: mixin
+displayName: Trivy
+description: Aqua's open source vulnerability scanner, added to an agent's sandbox
+sourceUrl: https://github.com/aquasecurity/trivy
+
+# What this kit installs. Keep in step with TRIVY_VERSION in trivy.dockerfile.
+provides: ["trivy@0.70.0"]
+
+capabilities:
+  # Trivy is installed when the kit is built (see trivy.dockerfile), so the
+  # sandbox never downloads it. At runtime it reaches the vulnerability
+  # database (mirror.gcr.io first, ghcr.io as the fallback, and GHCR's blob
+  # storage), and the GitHub hosts that serve the VEX repositories listed in
+  # vex-repository.yaml.
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - mirror.gcr.io
+          - ghcr.io
+          - pkg-containers.githubusercontent.com
+          - github.com
+          - api.github.com
+          - codeload.github.com
+          - raw.githubusercontent.com

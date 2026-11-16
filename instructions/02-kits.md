@@ -183,6 +183,84 @@ You'll use this kit to create the sandboxes your agents work in, in [Agent sandb
 
 To share a kit, publish it in a Git repository or an OCI registry (`sbx kit push`). Remote kits are only installed from trusted publishers: `sbx` checks each reference against the `kit.allowedSources` setting (see `sbx settings get kit.allowedSources`). For example, if you published this kit in your own GitHub repository, someone using it as `--kit "git+https://github.com/<YOUR-GITHUB-USERNAME>/<REPOSITORY>.git#dir=kits/python"` must first allow `github.com/<YOUR-GITHUB-USERNAME>/` there.
 
+## A kit with its own image: Trivy
+
+The Python kit installs its tool when the sandbox is created, so its network policy must open the Debian hosts during that install. A kit can also bring a Dockerfile and install its tools **when the kit itself is built**, on your machine, before any sandbox exists. The project includes a second mixin made that way, [`project/kits/trivy/`](../project/kits/trivy/), adapted from Docker's [trivy-mixin kit](https://github.com/docker/sbx-kits-contrib/tree/v3/trivy-mixin). It adds [Trivy](https://trivy.dev/), Aqua's open source vulnerability scanner, to an agent's sandbox:
+
+```yaml
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+kind: mixin
+displayName: Trivy
+description: Aqua's open source vulnerability scanner, added to an agent's sandbox
+sourceUrl: https://github.com/aquasecurity/trivy
+
+provides: ["trivy@0.70.0"]
+
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - mirror.gcr.io
+          - ghcr.io
+          - pkg-containers.githubusercontent.com
+          - github.com
+          - api.github.com
+          - codeload.github.com
+          - raw.githubusercontent.com
+```
+
+The first three hosts serve Trivy's vulnerability database. The GitHub hosts serve [VEX](https://docs.docker.com/dhi/explore/security-concepts/vex/) statements, which mark the CVEs that don't affect an image, including those published for Docker Hardened Images.
+
+Next to it, [`trivy.dockerfile`](../project/kits/trivy/trivy.dockerfile) builds the kit's image in two stages. The first starts from the sandbox template, downloads Trivy 0.70.0, and checks the download against the SHA256 published for each architecture. The second starts from an empty image (`scratch`) and keeps only the files the mixin adds: the `trivy` binary, and two files from the kit's folder, [`scan-images.sh`](../project/kits/trivy/scan-images.sh), a helper that prints one summary line per scanned image, and [`vex-repository.yaml`](../project/kits/trivy/vex-repository.yaml), which tells Trivy where to find the VEX statements. When you add the mixin to an agent, `sbx` lays these files over the agent's image:
+
+```dockerfile
+# syntax=docker/dockerfile:1
+FROM docker/sandbox-templates:shell-docker AS build
+
+ARG TRIVY_VERSION=0.70.0
+ARG TARGETARCH
+
+USER root
+RUN set -eu; \
+    case "${TARGETARCH}" in \
+      amd64) \
+        tarball="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"; \
+        sha256=8b4376d5d6befe5c24d503f10ff136d9e0c49f9127a4279fd110b727929a5aa9 ;; \
+      arm64) \
+        tarball="trivy_${TRIVY_VERSION}_Linux-ARM64.tar.gz"; \
+        sha256=2f6bb988b553a1bbac6bdd1ce890f5e412439564e17522b88a4541b4f364fc8d ;; \
+      *) echo "unsupported TARGETARCH: ${TARGETARCH} (expected amd64 or arm64)" >&2; exit 1 ;; \
+    esac; \
+    curl --proto '=https' --tlsv1.2 -fsSL -o /tmp/trivy.tgz \
+      "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${tarball}"; \
+    echo "${sha256}  /tmp/trivy.tgz" | sha256sum -c -; \
+    mkdir -p /out/usr/local/bin; \
+    tar -C /out/usr/local/bin -xzf /tmp/trivy.tgz trivy; \
+    rm /tmp/trivy.tgz; \
+    chmod 0755 /out/usr/local/bin/trivy; \
+    chown 0:0 /out/usr/local/bin/trivy; \
+    /out/usr/local/bin/trivy --version
+
+FROM scratch
+COPY --from=build /out /
+COPY --chmod=0755 scan-images.sh /usr/local/bin/scan-images
+COPY vex-repository.yaml /usr/local/share/trivy/vex-repository.yaml
+```
+
+Compared with the Python kit, both are mixins, but:
+
+| | Python kit | Trivy kit |
+|---|---|---|
+| Installs its tool | When the sandbox is created (`lifecycle` hook running `apt-get`) | When the kit is built (`trivy.dockerfile`), pinned by version and SHA256 |
+| Adds to the sandbox | Packages, installed inside each new sandbox | A layer of files, laid over the agent's image |
+| Network policy | Debian hosts while installing, PyPI afterwards | Trivy's vulnerability database and the VEX statements, at runtime only |
+
+Why put a scanner in a sandbox? It reads all your code, and it's a supply-chain target like any other tool: Trivy's own releases were compromised in March 2026. In a sandbox, it sees the workspace but not your `~/.ssh` or `~/.docker/config.json`, and it can reach its database, the VEX statements and the hosts you allowed, nothing else.
+
+You'll add this kit to an agent's sandbox in [MCP servers](10-mcp-servers.md), to scan DevBoard's base images before and after switching them to Docker Hardened Images.
+
 The next two sections show two more ways to package what you just did. They're here so you know they exist: you don't need to run them, and the rest of the lab doesn't use them.
 
 ## Combine kits into a kit set
