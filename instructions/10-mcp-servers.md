@@ -86,10 +86,13 @@ graph LR
     Then give it this prompt:
 
     ```console
-    For both the frontend and the backend app, from their Dockerfiles, find the Docker Hardened Image that matches it and how many known CVEs it has. At the end, list the tools you called.
+    For both the frontend and the backend app, from their Dockerfiles, find the runtime Docker Hardened Image (not a -dev variant) that matches it and how many known CVEs it has. At the end, list the tools you called.
     ```
 
-    The agent reads both Dockerfiles, calls `dhi` tools such as `dhi_get_repository`, and suggests the hardened Python 3.12 image for the backend and the hardened Node 22 Alpine image for the frontend, each with its CVE count. It may write their names as `dhi/python:3.12` and `dhi/node:22-alpine`: on your machine, pull them as `dhi.io/python:3.12` and `dhi.io/node:22-alpine`, which are the names you scan below. If it says that it has no `dhi` tools, see [Troubleshooting](troubleshooting.md).
+    The agent reads both Dockerfiles, calls `dhi` tools such as `dhi_get_repository`, and suggests the hardened Python 3.12 image for the backend and the hardened Node 22 Alpine image for the frontend, each with its CVE count. The exact tags it names vary from one run to the next, and it may drop the registry (`dhi/python:3.12`): the images you scan below are `dhi.io/python:3.12` and `dhi.io/node:22-alpine`. If it says that it has no `dhi` tools, see [Troubleshooting](troubleshooting.md).
+
+    > [!NOTE]
+    > Most hardened images come in two variants. The **runtime** image is minimal: no shell, no package manager. The **`-dev`** variant adds them (pip, npm, a shell…) for building, and is meant for the build stage of a multi-stage Dockerfile. Because DevBoard's Dockerfiles install packages, an agent left to choose tends to pick the `-dev` variants, which is why the prompt asks for the runtime image. The difference shows in a scan: `dhi.io/python:3.12-debian13-dev` had 414 vulnerabilities in our test, against 54 for `dhi.io/python:3.12`.
 
     > [!NOTE]
     > The CVE counts the agent reports come from the DHI catalog's scan summary (read through the MCP server), so they won't match the Trivy numbers below, which come from scanning the images yourself with Trivy's database and the VEX statements. Two scanners, two data sources, two sets of numbers: compare the hardened image with the original within one source, not across them.
@@ -129,7 +132,7 @@ Before switching DevBoard's Dockerfiles to the hardened images, measure what you
     dhi.io/node:22-alpine    0 vulnerabilities (0 critical, 0 high)
     ```
 
-    Without the VEX statements, Trivy reports 215, 93, 24 and 0: it counts every published CVE that matches a package version, whether or not it affects the image.
+    Without the VEX statements, Trivy reports 218, 96, 24 and 0: it counts every published CVE that matches a package version, whether or not it affects the image.
 
 2. See what the scanner reached:
 
@@ -139,6 +142,6 @@ Before switching DevBoard's Dockerfiles to the hardened images, measure what you
 
     Docker Hub and `dhi.io` were allowed by the rules you added in [Network policies](01-network-policies.md). `mirror.gcr.io`, where the database comes from, and the GitHub hosts that serve the VEX statements were allowed by the kit's own rules, which apply to this sandbox only. `check.trivy.dev`, Trivy's update check, is blocked: neither the kit nor your rules allow it. The `PROXY` column shows the proxy type that handled each request (`forward` or `forward-bypass`): what matters here is which list, allowed or blocked, a host appears in.
 
-The scanner read the images, not your machine: it never had your Docker credentials, your `~/.ssh` folder or any host outside its rules. And because Trivy is now in the agent's sandbox, the agent can use it too: next time, you could ask it to scan the images it suggests.
+The scanner read the images, not your machine: it never had your Docker credentials, your `~/.ssh` folder or any host outside its rules. And because Trivy is now in the agent's sandbox, the agent can use it too: next time, you could ask it to scan the images it suggests. Check which variant it picked first: a `-dev` image scores far worse than its runtime image.
 
 [[<< Previous: Port forwarding](09-port-forwarding.md) | [Next >> Wrap up](11-wrap-up.md)]

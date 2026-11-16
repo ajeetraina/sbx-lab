@@ -51,7 +51,7 @@ graph LR
 
 - A computer running macOS, Windows, or Linux.
 - A **Docker account**. Docker Sandboxes are free to use; [create a Docker account](https://hub.docker.com/signup) if you don't have one.
-- A **GitHub account with access to GitHub Copilot**. [Create a GitHub account](https://github.com/signup) and check the [Copilot plans](https://github.com/features/copilot/plans) for the available options. The lab sends about **10 prompts** to the agent, which count against your Copilot usage allowance. In a test run, the Copilot CLI reported between 5 and 9 **AI Credits** per prompt (shown at the end of each answer), so plan for roughly 50 to 90 in total. On **Copilot Free**, whose monthly allowance is small, check in your [Copilot settings](https://github.com/settings/copilot) that you have enough left.
+- A **GitHub account with access to GitHub Copilot**. [Create a GitHub account](https://github.com/signup) and check the [Copilot plans](https://github.com/features/copilot/plans) for the available options. The lab sends about **10 prompts** to the agent, which count against your Copilot usage allowance. In a test run, the Copilot CLI reported between about 3 and 15 **AI Credits** per prompt (shown at the end of each answer), about 75 in total. On **Copilot Free**, whose monthly allowance is small, check in your [Copilot settings](https://github.com/settings/copilot) that you have enough left.
 - **Git**, to clone the repository and review the agents' work.
 - The **GitHub CLI** (`gh`), signed in to your GitHub account. [Install it](https://cli.github.com/), then run `gh auth login` and verify with:
 

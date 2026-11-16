@@ -148,7 +148,7 @@ Review and respond with:
   sbx policy approval ls
 ```
 
-The request never left your machine: the host-side proxy blocked it and filed a **pending approval**. You could grant it from the host with `sbx policy approval`, or from the [TUI dashboard](05-tui-dashboard.md). The difference: **approving** answers this one request, while **allowing** (`sbx policy allow network`) adds a rule that applies to every sandbox from then on. In this module you'll add a rule.
+The request never left your machine: the host-side proxy blocked it and filed a **pending approval**. You could grant it from the host with `sbx policy approval`, or from the [TUI dashboard](05-tui-dashboard.md). The difference: **approving** answers this one request, while **allowing** (`sbx policy allow network`) adds a rule that applies to every sandbox from then on. In this module you'll add a rule. Adding it doesn't answer the pending approval: it stays in `sbx policy approval ls` until you respond to it or remove the sandbox, so don't be surprised to see it again in the dashboard.
 
 Exit this sandbox to return to your host:
 
