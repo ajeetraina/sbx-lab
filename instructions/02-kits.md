@@ -16,7 +16,8 @@ graph LR
     subgraph Kits["Kits, written in YAML"]
         direction TB
         AgentKit["Agent kit: sbx/copilot<br/>image, entrypoint, --yolo"]
-        Mixin["Mixin: kits/python<br/>install step, network rules"]
+        PythonMixin["Mixin: kits/python<br/>install step, network rules"]
+        TrivyMixin["Mixin: kits/trivy<br/>files built ahead, network rules"]
     end
 
     Create["sbx create --kit"]
@@ -25,14 +26,17 @@ graph LR
         direction TB
         Copilot["Copilot CLI"]
         Python["Python 3, venv, pip"]
+        Trivy["trivy, scan-images"]
     end
 
     KitPolicy["Kit policy<br/>for this sandbox only"]
 
     AgentKit -->|defines the agent| Create
-    Mixin -->|adds to it| Create
+    PythonMixin -->|adds to it| Create
+    TrivyMixin -->|adds to it| Create
     Create -->|starts| Copilot
     Create -->|installs| Python
+    Create -->|lays its files over the image| Trivy
     Create -->|adds| KitPolicy
 
     %% Styles — containers
@@ -41,7 +45,8 @@ graph LR
 
     %% Styles — kit nodes
     style AgentKit fill:#fff,stroke:#0DB7ED,color:#384D54
-    style Mixin fill:#fff,stroke:#0DB7ED,color:#384D54
+    style PythonMixin fill:#fff,stroke:#0DB7ED,color:#384D54
+    style TrivyMixin fill:#fff,stroke:#0DB7ED,color:#384D54
     style KitPolicy fill:#fff,stroke:#0DB7ED,color:#384D54
 
     %% Styles — infrastructure
@@ -50,6 +55,7 @@ graph LR
     %% Styles — sandbox nodes
     style Copilot fill:#e0f2e6,stroke:#6db88a,color:#384D54
     style Python fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style Trivy fill:#e0f2e6,stroke:#6db88a,color:#384D54
 ```
 
 Run the commands of this module from the root of the repository.
@@ -265,24 +271,25 @@ The next two sections show two more ways to package what you just did. They're h
 
 ## Combine kits into a kit set
 
-In this lab you add the Python mixin to the Copilot kit with `--kit` each time you create a sandbox. A [kit set](https://docs.docker.com/ai/sandboxes/customize/author/kit-sets/) (Early Access) packages that combination as a single kit, so your team runs one reference, with the versions you chose:
+In this lab you add mixins to the Copilot kit with `--kit` each time you create a sandbox: the Python kit, and in [MCP servers](10-mcp-servers.md), the Trivy kit. A [kit set](https://docs.docker.com/ai/sandboxes/customize/author/kit-sets/) (Early Access) packages such a combination as a single kit, so your team runs one reference, with the versions you chose:
 
 ```yaml
 # syntax=docker/sandbox-kit:3
 schemaVersion: "3"
 kind: set
-displayName: Copilot with Python
+displayName: Copilot with Python and Trivy
 version: "1.0.0"
 
 kits:
   - ref: docker.io/sbx/copilot@sha256:<DIGEST>          # the agent kit you inspected above
   - ref: docker.io/<NAMESPACE>/python-kit:1.0.0         # the Python mixin, once published
+  - ref: docker.io/<NAMESPACE>/trivy-kit:1.0.0          # the Trivy mixin, once published
 ```
 
 - A set lists its components under `kits:`: at most one agent kit (a workload) and any number of mixins.
-- Every component must be **published** to a registry. Local paths such as `./kits/python` aren't accepted, so you'd publish the Python mixin first.
-- Each component keeps its own network rules and credential requests. The set only adds what the combination needs on top, with the same `capabilities:` as a mixin.
-- You build and publish a set with Docker Buildx, `docker buildx build ./copilot-python -f ./copilot-python/copilot-python.yaml -t docker.io/<NAMESPACE>/copilot-python:1.0.0 --push`, then run it like any agent: `sbx run docker.io/<NAMESPACE>/copilot-python:1.0.0 --name quickstart`. No `--kit` needed.
+- Every component must be **published** to a registry. Local paths such as `./kits/python` aren't accepted, so you'd publish the Python and Trivy mixins first.
+- Each component keeps its own content and rules: the Python kit still installs Python when the sandbox is created, and the Trivy kit still brings its files and its network rules for the vulnerability database and the VEX statements. The set only adds what the combination needs on top, with the same `capabilities:` as a mixin.
+- You build and publish a set with Docker Buildx, `docker buildx build ./copilot-tools -f ./copilot-tools/copilot-tools.yaml -t docker.io/<NAMESPACE>/copilot-tools:1.0.0 --push`, then run it like any agent: `sbx run docker.io/<NAMESPACE>/copilot-tools:1.0.0 --name quickstart`. No `--kit` needed.
 
 ## Describe a sandbox in an environment file
 
