@@ -46,6 +46,14 @@ graph TD
     style You fill:#fff,stroke:#1D63ED,color:#00084D
 ```
 
+| | Direct mode (`quickstart`) | Clone mode (`--clone`) |
+|---|---|---|
+| Where the agent edits | Your working tree, live | A private Git clone inside the sandbox |
+| Starts from | Your files, committed or not | Your **committed** code |
+| Run it from | The folder to share (`project/`) | The root of the Git repository |
+| You see its work | Instantly, in your editor | After `git fetch sandbox-<name>` |
+| Good for | Interactive, one agent | Reviewable diffs, several agents at once |
+
 > [!NOTE]
 > The clone starts from your **committed** code. Make sure the fix from the previous module is committed (`git log --oneline` should show it).
 

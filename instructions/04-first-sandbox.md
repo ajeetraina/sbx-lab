@@ -127,7 +127,7 @@ Before you hand this sandbox to an agent that runs without asking for confirmati
     sbx exec quickstart sh -c 'pwd; ls -A ~'
     ```
 
-    The workspace has the same path as on your host. But the home folder is the agent's own (`/home/agent`), not yours: shell and Git settings, but no `.ssh` keys, no cloud credentials, none of your other projects.
+    The workspace has the same path as on your host (on Windows, written Linux-style: `C:\Users\you\...` becomes `/c/Users/you/...`). But the home folder is the agent's own (`/home/agent`), not yours: shell and Git settings, but no `.ssh` keys, no cloud credentials, none of your other projects.
 
 3. **It can't send your code anywhere you didn't allow.** Imagine that a malicious instruction, hidden in a README or an issue, convinced the agent to upload a file to a paste site. Try it yourself:
 
@@ -174,5 +174,8 @@ Before you hand this sandbox to an agent that runs without asking for confirmati
 - Type **`!`** before a command inside the agent to run it as a shell command without leaving the session, for example `!ls` or `!git status`.
 
 Go ahead and exit the session by pressing **`Ctrl-C` twice**.
+
+> [!NOTE]
+> A sandbox **stops shortly after its last agent session ends**, and anything running inside it (containers, servers) stops with it. Files and installed packages stay. You'll rely on this in the Docker and port forwarding modules; to bring a sandbox back without opening a session, run `sbx run --detach --name quickstart`.
 
 [[<< Previous: Secrets and credentials](03-secrets-credentials.md) | [Next >> TUI dashboard](05-tui-dashboard.md)]

@@ -89,7 +89,10 @@ graph LR
     For both the frontend and the backend app, from their Dockerfiles, find the Docker Hardened Image that matches it and how many known CVEs it has. At the end, list the tools you called.
     ```
 
-    The agent reads both Dockerfiles, calls `dhi` tools such as `dhi_get_repository`, and suggests `dhi.io/python:3.12` for the backend and `dhi.io/node:22-alpine` for the frontend, each with its CVE count. If it says that it has no `dhi` tools, see [Troubleshooting](troubleshooting.md).
+    The agent reads both Dockerfiles, calls `dhi` tools such as `dhi_get_repository`, and suggests the hardened Python 3.12 image for the backend and the hardened Node 22 Alpine image for the frontend, each with its CVE count. It may write their names as `dhi/python:3.12` and `dhi/node:22-alpine`: on your machine, pull them as `dhi.io/python:3.12` and `dhi.io/node:22-alpine`, which are the names you scan below. If it says that it has no `dhi` tools, see [Troubleshooting](troubleshooting.md).
+
+    > [!NOTE]
+    > The CVE counts the agent reports come from the DHI catalog's scan summary (read through the MCP server), so they won't match the Trivy numbers below, which come from scanning the images yourself with Trivy's database and the VEX statements. Two scanners, two data sources, two sets of numbers: compare the hardened image with the original within one source, not across them.
 
     > [!IMPORTANT]
     > The DHI server also has tools that change things (creating and removing mirrors in your Docker organization). The prompt only asks the agent to look things up, and to list the tools it called: check that list.
@@ -117,11 +120,11 @@ Before switching DevBoard's Dockerfiles to the hardened images, measure what you
 
     For each image, the helper runs `trivy image --image-src remote --scanners vuln --vex repo`: Trivy reads the image straight from its registry and applies the [VEX](https://docs.docker.com/dhi/explore/security-concepts/vex/) statements, which mark the CVEs that don't affect the image. The first scan also downloads Trivy's vulnerability database, about 130 MB, and the VEX statements, so it takes a minute or two.
 
-    The numbers change as new vulnerabilities are published. At the time of writing:
+    The numbers change as new vulnerabilities are published, so yours will differ by a few. At the time of writing:
 
     ```none
-    python:3.12-slim         85 vulnerabilities (0 critical, 15 high)
-    dhi.io/python:3.12       51 vulnerabilities (0 critical, 7 high)
+    python:3.12-slim         88 vulnerabilities (0 critical, 15 high)
+    dhi.io/python:3.12       54 vulnerabilities (0 critical, 7 high)
     node:22-alpine           16 vulnerabilities (0 critical, 6 high)
     dhi.io/node:22-alpine    0 vulnerabilities (0 critical, 0 high)
     ```
@@ -134,7 +137,7 @@ Before switching DevBoard's Dockerfiles to the hardened images, measure what you
     sbx policy log mcp
     ```
 
-    Docker Hub and `dhi.io` were allowed by the rules you added in [Network policies](01-network-policies.md). `mirror.gcr.io`, where the database comes from, and the GitHub hosts that serve the VEX statements were allowed by the kit's own rules, which apply to this sandbox only. `check.trivy.dev`, Trivy's update check, is blocked: neither the kit nor your rules allow it.
+    Docker Hub and `dhi.io` were allowed by the rules you added in [Network policies](01-network-policies.md). `mirror.gcr.io`, where the database comes from, and the GitHub hosts that serve the VEX statements were allowed by the kit's own rules, which apply to this sandbox only. `check.trivy.dev`, Trivy's update check, is blocked: neither the kit nor your rules allow it. The `PROXY` column shows the proxy type that handled each request (`forward` or `forward-bypass`): what matters here is which list, allowed or blocked, a host appears in.
 
 The scanner read the images, not your machine: it never had your Docker credentials, your `~/.ssh` folder or any host outside its rules. And because Trivy is now in the agent's sandbox, the agent can use it too: next time, you could ask it to scan the images it suggests.
 

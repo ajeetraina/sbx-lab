@@ -78,6 +78,9 @@ sbx policy ls
 
 Run this command to set the default:
 
+> [!WARNING]
+> `sbx policy reset` **deletes every network rule you have created on this machine**, not only the lab's. If you use `sbx` for other work, save your current rules first with `sbx policy ls` and re-add them afterwards.
+
 ```bash
 sbx policy reset
 ```
@@ -124,10 +127,10 @@ You will see this message:
     Reason:      no matching allow rule (default deny)
 ```
 
-Now start your **first sandbox**: a microVM with just a shell, no agent yet. It's named after the current folder, and that folder is its workspace:
+Now start your **first sandbox**: a microVM with just a shell, no agent yet. The current folder is its workspace, and `--name` gives it a name you will reuse when you clean up:
 
 ```bash
-sbx run shell
+sbx run shell --name shell-demo
 ```
 
 Your prompt changes: you're now inside the sandbox. Try to reach `docker.com` from there:
@@ -145,7 +148,7 @@ Review and respond with:
   sbx policy approval ls
 ```
 
-The request never left your machine: the host-side proxy blocked it and filed a **pending approval**. You could grant it from the host with `sbx policy approval`, or from the [TUI dashboard](05-tui-dashboard.md). In this module you'll add a rule instead, which applies to every sandbox.
+The request never left your machine: the host-side proxy blocked it and filed a **pending approval**. You could grant it from the host with `sbx policy approval`, or from the [TUI dashboard](05-tui-dashboard.md). The difference: **approving** answers this one request, while **allowing** (`sbx policy allow network`) adds a rule that applies to every sandbox from then on. In this module you'll add a rule.
 
 Exit this sandbox to return to your host:
 
@@ -166,7 +169,7 @@ You should see output similar to the following:
 ```none
   BLOCKED REQUESTS
   SANDBOX           TYPE      HOST                                         PROXY     RULE                                                                                                                    REASON                                  LAST SEEN        COUNT
-  shell-Mathieu     network   docker.com:80                                forward   no applicable policies for op(action=net:connect:tcp, resource=net:domain:docker.com:80)                                No matching allow rule (default deny)   11:03:48 7-Nov   2
+  shell-demo        network   docker.com:80                                forward   no applicable policies for op(action=net:connect:tcp, resource=net:domain:docker.com:80)                                No matching allow rule (default deny)   11:03:48 7-Nov   2
 ```
 
 Adding the `--json` flag will output the log details in a machine-readable JSON format.
@@ -198,7 +201,7 @@ You will see this message:
 Reconnect to the sandbox:
 
 ```bash
-sbx run shell
+sbx run --name shell-demo
 ```
 
 Once in the sandbox, try to reach `docker.com` again, showing only the response headers:
