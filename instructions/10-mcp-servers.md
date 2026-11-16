@@ -4,7 +4,7 @@ Your agent can only reach the hosts you allowed in the [network policies](01-net
 
 Each sandbox has an **MCP gateway**. The agent only talks to the gateway; the MCP servers you register run **outside** the sandbox, on your host or as remote services. You give the agent new tools without opening its network.
 
-In this module you give your agent the **Docker Hardened Images (DHI)** MCP server, so it can look up a hardened alternative to an image DevBoard uses.
+In this module you give your agent the **Docker Hardened Images (DHI)** MCP server, so it can look up a hardened alternative to an image DevBoard uses. Then you scan those images with the **Trivy kit** from the [Kits](02-kits.md#a-kit-with-its-own-image-trivy) module.
 
 ```mermaid
 graph LR
@@ -14,22 +14,32 @@ graph LR
         direction TB
         McpRegistry["Registered MCP servers<br/>sbx mcp add dhi"]
         Gateway["MCP gateway"]
+        TrivyKit["Trivy kit<br/>project/kits/trivy"]
+        Proxy["Proxy<br/>your rules + the kit's rules"]
     end
 
     subgraph Sandbox["Sandbox: mcp"]
         direction TB
         Agent["Copilot agent<br/>network still locked down"]
+        Trivy["trivy and scan-images<br/>from the kit"]
     end
 
     subgraph Outside["Outside the sandbox"]
         direction TB
         Dhi["DHI MCP server<br/>dhi.io/mcp"]
+        TrivySources["Trivy database and VEX<br/>mirror.gcr.io, GitHub"]
+        Registries["Image registries<br/>Docker Hub, dhi.io"]
     end
 
     You -->|"sbx mcp add, --static-mcp dhi"| McpRegistry
     McpRegistry -->|configures| Gateway
     Agent -->|tool calls| Gateway
     Gateway -->|"calls, no network rule needed"| Dhi
+    TrivyKit -->|"--kit, at sbx create"| Trivy
+    You -->|"sbx exec mcp scan-images"| Trivy
+    Trivy -->|every request| Proxy
+    Proxy -->|"kit's rules"| TrivySources
+    Proxy -->|"your rules"| Registries
 
     %% Styles — containers
     style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
@@ -38,13 +48,18 @@ graph LR
 
     %% Styles — host nodes
     style McpRegistry fill:#fff,stroke:#0DB7ED,color:#384D54
+    style TrivyKit fill:#fff,stroke:#0DB7ED,color:#384D54
     style Gateway fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Proxy fill:#E5F2FC,stroke:#1D63ED,color:#00084D
 
     %% Styles — sandbox nodes
     style Agent fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style Trivy fill:#e0f2e6,stroke:#6db88a,color:#384D54
 
     %% Styles — external nodes
     style Dhi fill:#fff0e5,stroke:#d4915e,color:#384D54
+    style TrivySources fill:#fff0e5,stroke:#d4915e,color:#384D54
+    style Registries fill:#fff0e5,stroke:#d4915e,color:#384D54
 
     %% Styles — actor
     style You fill:#fff,stroke:#1D63ED,color:#00084D
