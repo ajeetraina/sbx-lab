@@ -93,6 +93,8 @@ Run the commands of this module from the root of the repository.
     displayName: GitHub Copilot
     description: GitHub Copilot CLI, GitHub's agentic coding CLI.
     sourceURL: https://github.com/docker-hardened-images/definitions
+    licenses:
+    - LicenseRef-Proprietary
     sandbox:
       image: docker.io/sbx/copilot@sha256:f9c2331f...
       entrypoint:
@@ -145,9 +147,10 @@ capabilities:
           user: "0"
           command: apt-get update && apt-get install -y --no-install-recommends python3 python3-venv python3-pip
 
-  # Only the hosts this kit needs. While installing: the sandbox image's apt
+  # Only the hosts this kit needs. For the install: the sandbox image's apt
   # repositories (Debian and Docker Hardened Images), which apt-get update reads.
-  # Afterwards: PyPI, for pip.
+  # At runtime: PyPI, for pip. (With sbx v0.53.0, the install hosts also stay
+  # allowed once the sandbox runs.)
   - type: com.docker.sandbox/network-policy@1
     config:
       install:
@@ -156,7 +159,10 @@ capabilities:
         allow: [pypi.org, files.pythonhosted.org]
 ```
 
-It declares two capabilities: a **lifecycle** hook that runs once when the sandbox is created, and a **network policy** that opens only the hosts this kit needs. While installing, that's the sandbox image's apt repositories, `deb.debian.org` and `dhi.io` (Docker Hardened Images), because `apt-get update` reads every configured source. Afterwards, it's PyPI for `pip`. No Dockerfile is needed for this one.
+It declares two capabilities: a **lifecycle** hook that runs once when the sandbox is created, and a **network policy** that opens only the hosts this kit needs. For the install, that's the sandbox image's apt repositories, `deb.debian.org` and `dhi.io` (Docker Hardened Images), because `apt-get update` reads every configured source. At runtime, it's PyPI for `pip`. No Dockerfile is needed for this one.
+
+> [!NOTE]
+> The `install` and `runtime` lists say when each host is needed. With `sbx` v0.53.0, though, the hosts listed under `install` **stay allowed after the install** too: `sbx policy inspect` shows them in the sandbox's kit policy, and the agent can still reach `deb.debian.org`. Count both lists as hosts the sandbox can reach.
 
 1. Check that the kit is valid:
 
@@ -180,7 +186,7 @@ It declares two capabilities: a **lifecycle** hook that runs once when the sandb
       Schema:       v3
       Display:      Python
       Description:  Python 3 with venv and pip, installed when the sandbox is created
-      Template:     sbx-kit-src:python-78a44f7d1e7d
+      Template:     sbx-kit-src:python-14804de38edb
       Policies:
         Network:    2 allow, 0 deny
         Commands:   1 install, 0 startup, 0 init files
@@ -262,7 +268,7 @@ Compared with the Python kit, both are mixins, but:
 |---|---|---|
 | Installs its tool | When the sandbox is created (`lifecycle` hook running `apt-get`) | When the kit is built (`trivy.dockerfile`), pinned by version and SHA256 |
 | Adds to the sandbox | Packages, installed inside each new sandbox | A layer of files, laid over the agent's image |
-| Network policy | Debian hosts while installing, PyPI afterwards | Trivy's vulnerability database and the VEX statements, at runtime only |
+| Network policy | Debian hosts for the install, PyPI at runtime (the Debian hosts stay open: see the note above) | Trivy's vulnerability database and the VEX statements, at runtime only |
 
 Why put a scanner in a sandbox? It reads all your code, and it's a supply-chain target like any other tool: Trivy's own releases were compromised in March 2026. In a sandbox, it sees the workspace but not your `~/.ssh` or `~/.docker/config.json`, and it can reach its database, the VEX statements and the hosts you allowed, nothing else.
 
@@ -296,7 +302,7 @@ kits:
 
 A kit packages tools. An [environment file](https://docs.docker.com/ai/sandboxes/configuration/environment-files/) (`sbxenv.yaml`, experimental) describes a whole sandbox instead: the agent and its kits, the workspace, the secrets, the published ports, MCP servers, and commands to run on your host. Commit it with the project, and every contributor gets the same sandbox without retyping flags.
 
-This file, at the root of the repository, gathers the setup you'll do step by step in the next modules:
+The repository doesn't include one, but this file, saved as `sbxenv.yaml` at the root of the repository, would gather the setup you'll do step by step in the next modules:
 
 ```yaml
 schemaVersion: "1"

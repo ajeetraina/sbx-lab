@@ -13,9 +13,10 @@ capabilities:
           user: "0"
           command: apt-get update && apt-get install -y --no-install-recommends python3 python3-venv python3-pip
 
-  # Only the hosts this kit needs. While installing: the sandbox image's apt
+  # Only the hosts this kit needs. For the install: the sandbox image's apt
   # repositories (Debian and Docker Hardened Images), which apt-get update reads.
-  # Afterwards: PyPI, for pip.
+  # At runtime: PyPI, for pip. (With sbx v0.53.0, the install hosts also stay
+  # allowed once the sandbox runs.)
   - type: com.docker.sandbox/network-policy@1
     config:
       install:

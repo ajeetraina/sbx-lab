@@ -148,7 +148,7 @@ Review and respond with:
   sbx policy approval ls
 ```
 
-The request never left your machine: the host-side proxy blocked it and filed a **pending approval**. You could grant it from the host with `sbx policy approval`, or from the [TUI dashboard](05-tui-dashboard.md). The difference: **approving** answers this one request, while **allowing** (`sbx policy allow network`) adds a rule that applies to every sandbox from then on. In this module you'll add a rule.
+The request never left your machine: the host-side proxy blocked it and filed a **pending approval**. You could grant it from the host with `sbx policy approval`, or from the [TUI dashboard](05-tui-dashboard.md). The difference: **approving** answers this one request, while **allowing** (`sbx policy allow network`) adds a rule that applies to every sandbox from then on. In this module you'll add a rule. Adding it doesn't answer the pending approval: it stays in `sbx policy approval ls` until you respond to it or remove the sandbox, so don't be surprised to see it again in the dashboard.
 
 Exit this sandbox to return to your host:
 
@@ -281,12 +281,14 @@ sbx policy allow network "registry.npmjs.org"
 
 | Rule | Used by | Module |
 |------|---------|--------|
-| `github.com`, `**.github.com` | GitHub API, used by Copilot | all agent modules |
+| `github.com`, `**.github.com` | GitHub API, used by Copilot; also where Trivy downloads the VEX statements | all agent modules, [MCP servers](10-mcp-servers.md) |
 | `**.githubcopilot.com` | Copilot service; the subdomain depends on your plan (`api.individual…`, `api.business…`, `api.enterprise…`), hence `**` | all agent modules |
-| `deb.debian.org`, `dhi.io` | The sandbox image's `apt` repositories (Debian and Docker Hardened Images), used to install Python, which the image doesn't include. The Python kit you'll build in the next module declares them too, for the sandboxes that use it | [Kits](02-kits.md), [Run in direct mode](06-run-in-direct-mode.md) |
+| `deb.debian.org`, `dhi.io` | The sandbox image's `apt` repositories (Debian and Docker Hardened Images), used to install Python, which the image doesn't include. The Python kit you'll build in the next module declares them too, for the sandboxes that use it. `dhi.io` is also the Docker Hardened Images registry, where Trivy reads the hardened images it scans | [Kits](02-kits.md), [Run in direct mode](06-run-in-direct-mode.md), MCP servers |
 | `pypi.org`, `files.pythonhosted.org` | Installing the backend's Python packages | Run in direct mode, Clone mode, [Docker inside the sandbox](08-docker-inside-the-sandbox.md) |
-| `**.docker.io`, `production.cloudfront.docker.com` | Pulling the `python`, `node` and `postgres` images from Docker Hub | Docker inside the sandbox |
+| `**.docker.io`, `production.cloudfront.docker.com` | Pulling the `python`, `node` and `postgres` images from Docker Hub, and reading the Docker Hub images that Trivy scans | Docker inside the sandbox, MCP servers |
 | `registry.npmjs.org` | Installing the frontend's npm packages | Docker inside the sandbox |
+
+A few more hosts are needed later, but you don't add them here: the kits that need them declare them, and those rules apply only to the sandboxes that use the kit. The Trivy kit, in [MCP servers](10-mcp-servers.md), adds `mirror.gcr.io` (Trivy's vulnerability database) and `raw.githubusercontent.com` (part of the VEX statements) for its sandbox only. You'll see the difference in that sandbox's network log.
 
 The hosts have no port suffix on purpose: `apt` downloads from Debian over HTTP (port 80).
 
