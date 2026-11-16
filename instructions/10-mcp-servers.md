@@ -92,6 +92,20 @@ graph LR
 
     `--static-mcp dhi` starts the sandbox's MCP gateway with **exactly this server**, and without the discovery tools an agent could use to find and add servers by itself. You decide which servers it gets. `--kit ./kits/trivy` adds the [Trivy kit](02-kits.md#a-kit-with-its-own-image-trivy) from the Kits module, which you'll use at the end of this module. The first time, `sbx` builds the kit's image, which downloads and checks Trivy (about a minute).
 
+    Check what the gateway was given:
+
+    ```bash
+    sbx inspect mcp
+    ```
+
+    ```none
+      MCP gateway:             configured
+      MCP mode:                static
+      MCP servers:             dhi
+    ```
+
+    These lines describe this sandbox's gateway. `sbx mcp ls`, on the other hand, lists the servers registered on your host, whether or not a sandbox uses them.
+
 4. Start an agent in the `mcp` sandbox:
 
     ```bash
@@ -104,7 +118,7 @@ graph LR
     For both the frontend and the backend app, from their Dockerfiles, find the runtime Docker Hardened Image (not a -dev variant) that matches it and how many known CVEs it has. At the end, list the tools you called.
     ```
 
-    The agent reads both Dockerfiles, calls `dhi` tools such as `dhi_get_repository`, and suggests the hardened Python 3.12 image for the backend and the hardened Node 22 Alpine image for the frontend, each with its CVE count. The exact tags it names vary from one run to the next, and it may drop the registry (`dhi/python:3.12`): the images you scan below are `dhi.io/python:3.12` and `dhi.io/node:22-alpine`. If it says that it has no `dhi` tools, see [Troubleshooting](troubleshooting.md).
+    The agent reads both Dockerfiles, calls `dhi` tools such as `dhi_get_repository` (Copilot lists them with the gateway's prefix, `mcp-gateway-dhi_get_repository`), and suggests the hardened Python 3.12 image for the backend and the hardened Node 22 Alpine image for the frontend, each with its CVE count. The exact tags it names vary from one run to the next, and it may drop the registry (`dhi/python:3.12`): the images you scan below are `dhi.io/python:3.12` and `dhi.io/node:22-alpine`. If it says that it has no `dhi` tools, see [Troubleshooting](troubleshooting.md).
 
     > [!NOTE]
     > Most hardened images come in two variants. The **runtime** image is minimal: no shell, no package manager. The **`-dev`** variant adds them (pip, npm, a shell…) for building, and is meant for the build stage of a multi-stage Dockerfile. Because DevBoard's Dockerfiles install packages, an agent left to choose tends to pick the `-dev` variants, which is why the prompt asks for the runtime image. The difference shows in a scan: `dhi.io/python:3.12-debian13-dev` had 414 vulnerabilities in our test, against 54 for `dhi.io/python:3.12`.
@@ -141,13 +155,13 @@ Before switching DevBoard's Dockerfiles to the hardened images, measure what you
     The numbers change as new vulnerabilities are published, so yours will differ by a few. At the time of writing:
 
     ```none
-    python:3.12-slim         88 vulnerabilities (0 critical, 15 high)
-    dhi.io/python:3.12       54 vulnerabilities (0 critical, 7 high)
+    python:3.12-slim         83 vulnerabilities (0 critical, 15 high)
+    dhi.io/python:3.12       49 vulnerabilities (0 critical, 7 high)
     node:22-alpine           16 vulnerabilities (0 critical, 6 high)
     dhi.io/node:22-alpine    0 vulnerabilities (0 critical, 0 high)
     ```
 
-    Without the VEX statements, Trivy reports 218, 96, 24 and 0: it counts every published CVE that matches a package version, whether or not it affects the image.
+    Without the VEX statements, Trivy reports 217, 96, 24 and 0: it counts every published CVE that matches a package version, whether or not it affects the image.
 
 2. See what the scanner reached:
 

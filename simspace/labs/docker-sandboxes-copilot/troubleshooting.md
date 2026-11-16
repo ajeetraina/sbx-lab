@@ -21,7 +21,7 @@ Run `sbx diagnose` first: it checks the most common installation problems.
 | The agent can't install packages or reach a website | The lab runs with the **Locked Down** policy, so only the hosts allowed in *Network policies* are reachable. Check that those rules exist with `sbx policy ls`, then run `sbx policy log` to see which hosts were blocked. Allow what is needed with `sbx policy allow network <host>`, or use the **Network** panel of the TUI (`sbx`, then `Tab`). |
 | `sbx policy ls` shows policies whose `SOURCE` is not `local` | Your organization manages your sandbox policies and some exercises may be blocked. Use a personal Docker account or ask your administrator. |
 | The agent can't authenticate to GitHub or Copilot | Run `gh auth status`, then store the secrets again **before** creating the sandbox. Global secrets are injected at creation time, so recreate the sandbox if you added them afterwards. |
-| `git fetch sandbox-<name>` fails with `Please make sure you have the correct access rights and the repository exists.` | The sandbox must be running, and a sandbox stops when its agent session ends. Start it again without a new session with `sbx run --detach --name <name>`, then fetch. |
+| `git fetch sandbox-<name>` fails with `'sandbox-<name>' does not appear to be a git repository` | The sandbox must be running, and a sandbox stops when its agent session ends. Start it again without a new session with `sbx run --detach --name <name>`, then fetch. |
 | `sbx run --clone` fails with `--clone requires a Git repository` | Run it from the root of the repository (`cd ..` if you are in `project/`), not from the `project` folder. |
 | The agent says that Python (or Node.js) is not installed | The sandbox image doesn't include them. Sandboxes created with `--kit ./kits/python` have Python; for the others, the agent is told how to install it in `AGENTS.md`. |
 | `localhost:3001` or `localhost:8000` stopped answering | The sandbox stopped because no agent session was attached. Restart it with `sbx run --detach --name quickstart`; the services and the published ports come back by themselves. |
@@ -29,7 +29,7 @@ Run `sbx diagnose` first: it checks the most common installation problems.
 | `git merge` refuses to run because of local changes | Commit your changes first: run `git add -A`, then `git commit`. |
 | A command in the sandbox prints `Approval required for <host>:<port>.` | The network policy blocked that host. If the lab needs it, allow it with `sbx policy allow network <host>`, or grant this one request with `sbx policy approval ls`. |
 | Windows PowerShell prints red `NativeCommandError` text after a command that worked | Windows PowerShell 5.1 shows anything a program writes to its error stream as an error. If the command's result is what you expected, ignore it. |
-| `sbx ports` shows `No published ports` | The sandbox is stopped. Run `sbx run --detach --name <name>`; the ports come back. |
+| `sbx port ls` shows `No published ports` | The sandbox is stopped. Run `sbx run --detach --name <name>`; the ports come back. |
 | A command with `&&` fails in Windows PowerShell | Windows PowerShell 5.1 doesn't support `&&`: run the two commands one after the other. |
 
 Still stuck? [Open an issue](https://github.com/mathieu-benoit/sbx-lab/issues) and include the output of `sbx version` and `sbx diagnose`.

@@ -96,7 +96,7 @@ Writing a kit is mostly writing YAML. The DevBoard project includes a small mixi
 
 It declares two capabilities: a **lifecycle** hook that runs once when the sandbox is created, and a **network policy** that opens only the hosts this kit needs. For the install, that's the sandbox image's apt repositories, `deb.debian.org` and `dhi.io`, because `apt-get update` reads every configured source. At runtime, it's PyPI for `pip`. No Dockerfile is needed for this one.
 
-> **Note:** the `install` and `runtime` lists say when each host is needed. With `sbx` v0.53.0, though, the hosts listed under `install` **stay allowed after the install** too. Count both lists as hosts the sandbox can reach.
+> **Note:** the `install` and `runtime` lists say when each host is needed. With `sbx` v0.54.0, though, the hosts listed under `install` **stay allowed after the install** too. Count both lists as hosts the sandbox can reach.
 
 Check that the kit is valid:
 

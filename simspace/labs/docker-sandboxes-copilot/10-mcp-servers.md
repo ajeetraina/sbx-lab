@@ -80,6 +80,14 @@ graph LR
 
     `--static-mcp dhi` starts the sandbox's MCP gateway with **exactly this server**, and without the discovery tools an agent could use to find and add servers by itself. You decide which servers it gets. `--kit ./kits/trivy` adds the Trivy kit, which you'll use at the end of this module. The first time, `sbx` builds the kit's image, which downloads and checks Trivy.
 
+    Check what the gateway was given:
+
+    ```bash terminal-id=t2
+    sbx inspect mcp
+    ```
+
+    These lines describe this sandbox's gateway. `sbx mcp ls`, on the other hand, lists the servers registered on your host, whether or not a sandbox uses them.
+
 4. Start an agent in the `mcp` sandbox:
 
     ```bash terminal-id=t2
@@ -92,7 +100,7 @@ graph LR
     For both the frontend and the backend app, from their Dockerfiles, find the runtime Docker Hardened Image (not a -dev variant) that matches it and how many known CVEs it has. At the end, list the tools you called.
     ```
 
-    The agent reads both Dockerfiles, calls `dhi` tools such as `dhi_get_repository`, and suggests the hardened Python 3.12 image for the backend and the hardened Node 22 Alpine image for the frontend, each with its CVE count. In the real lab the exact tags it names vary from one run to the next: the images you scan below are `dhi.io/python:3.12` and `dhi.io/node:22-alpine`.
+    The agent reads both Dockerfiles, calls `dhi` tools such as `dhi_get_repository` (Copilot lists them with the gateway's prefix, `mcp-gateway-dhi_get_repository`), and suggests the hardened Python 3.12 image for the backend and the hardened Node 22 Alpine image for the frontend, each with its CVE count. In the real lab the exact tags it names vary from one run to the next: the images you scan below are `dhi.io/python:3.12` and `dhi.io/node:22-alpine`.
 
     > **Note:** most hardened images come in two variants. The **runtime** image is minimal: no shell, no package manager. The **`-dev`** variant adds them (pip, npm, a shell…) for building, and is meant for the build stage of a multi-stage Dockerfile. Because DevBoard's Dockerfiles install packages, an agent left to choose tends to pick the `-dev` variants, which is why the prompt asks for the runtime image. The difference shows in a scan: `dhi.io/python:3.12-debian13-dev` had 414 vulnerabilities in a test run, against 54 for `dhi.io/python:3.12`.
 

@@ -149,7 +149,7 @@ capabilities:
 
   # Only the hosts this kit needs. For the install: the sandbox image's apt
   # repositories (Debian and Docker Hardened Images), which apt-get update reads.
-  # At runtime: PyPI, for pip. (With sbx v0.53.0, the install hosts also stay
+  # At runtime: PyPI, for pip. (With sbx v0.54.0, the install hosts also stay
   # allowed once the sandbox runs.)
   - type: com.docker.sandbox/network-policy@1
     config:
@@ -162,7 +162,7 @@ capabilities:
 It declares two capabilities: a **lifecycle** hook that runs once when the sandbox is created, and a **network policy** that opens only the hosts this kit needs. For the install, that's the sandbox image's apt repositories, `deb.debian.org` and `dhi.io` (Docker Hardened Images), because `apt-get update` reads every configured source. At runtime, it's PyPI for `pip`. No Dockerfile is needed for this one.
 
 > [!NOTE]
-> The `install` and `runtime` lists say when each host is needed. With `sbx` v0.53.0, though, the hosts listed under `install` **stay allowed after the install** too: `sbx policy inspect` shows them in the sandbox's kit policy, and the agent can still reach `deb.debian.org`. Count both lists as hosts the sandbox can reach.
+> The `install` and `runtime` lists say when each host is needed. With `sbx` v0.54.0, though, the hosts listed under `install` **stay allowed after the install** too: `sbx policy inspect` shows them in the sandbox's kit policy, and the agent can still reach `deb.debian.org`. Count both lists as hosts the sandbox can reach.
 
 1. Check that the kit is valid:
 
