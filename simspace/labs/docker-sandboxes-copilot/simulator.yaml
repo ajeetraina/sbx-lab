@@ -1,0 +1,2193 @@
+version: "2.0"
+
+metadata:
+  id: docker-sandboxes-copilot
+  title: "Docker Sandboxes with GitHub Copilot"
+  summary: "Network policies, kits, credentials, direct and clone mode, Docker in the sandbox, port forwarding and MCP, simulated in the browser."
+
+objectives:
+  - "Control what an agent can reach with network policies"
+  - "Read and build kits"
+  - "Give an agent credentials it can use but never read"
+  - "Run agents in direct mode, in clone mode and in parallel"
+  - "Run Docker inside a sandbox and publish its ports"
+  - "Give an agent tools through the MCP gateway"
+
+# In-memory state. Every scenario below reads it in `when.state` and writes it
+# in `then.state`; it is the whole "where am I in the lab" model.
+state:
+  cwd: root                   # root of the repository, or project
+  policy:
+    stage: balanced           # balanced -> none (after reset) -> locked (after init deny-all)
+    dockerAllowed: false      # the docker.com allow rule from the network module
+    adsDenied: false
+  rules:                      # the four rules the lab adds
+    github: false
+    python: false
+    dockerhub: false
+    npm: false
+  secrets:
+    github: false
+    copilot: false
+  sandboxes:
+    warmupShell: false
+    warmupCopilot: false
+    shellDemo: false
+    quickstart: false
+    fixBugs: false
+    addSearch: false
+    addNotif: false
+    mcp: false
+    portsDemo: false
+  shell:
+    blocked: false            # shell-demo hit the proxy
+  quickstart:
+    pasteTried: false
+  repo:                       # what is in YOUR repository on the host
+    paginationCommitted: false
+    fixFetched: false
+    searchFetched: false
+    notifFetched: false
+    mergedFix: false
+    mergedSearch: false
+    mergedNotif: false
+  code:
+    paginationFixed: false    # the working tree has the pagination fix
+  clone:
+    fixDone: false            # the fix-bugs agent finished
+  stack:
+    up: false                 # Docker Compose stack running inside quickstart
+  ports:
+    api: false
+    web: false
+    demoServer: false
+  mcp:
+    registered: false
+  scan:
+    done: false
+
+settings:
+  pace:
+    pull: 900       # a layer download or an image build step
+    scan: 1100      # a Trivy scan
+    work: 700       # an agent doing something
+
+defaults:
+  unmatched:
+    stderr: ["This command isn't part of the lab: the simulation only knows the commands the modules ask you to run."]
+    exit: 127
+  unmatchedAgent:
+    output: ["This prompt isn't part of the lab. Use the Run button on the prompts of the module, or type /exit to leave the session."]
+
+scenarios:
+  # ════════════════════════════════════════════════════════════════════════
+  # Plain shell on your host: cd and gh
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: cd-project
+    when:
+      command: [cd]
+      args:
+        0: "project"
+    then:
+      state: { cwd: project }
+
+  - id: cd-up
+    when:
+      command: [cd]
+      args:
+        0: ".."
+    then:
+      state: { cwd: root }
+
+  # Inside a session the terminal handles /exit itself; this is the answer when
+  # you type it at a plain host prompt.
+  - id: exit-without-session
+    when:
+      command: ["/exit"]
+    then:
+      output: ["No agent session is open in this terminal."]
+
+  - id: gh-auth-status
+    when:
+      command: [gh, auth, status]
+    then:
+      output:
+        - "github.com"
+        - "  ✓ Logged in to github.com account your-github-login (keyring)"
+        - "  - Active account: true"
+        - "  - Git operations protocol: https"
+        - "  - Token: gho_************************************"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 00: prerequisites
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: sbx-version
+    completes: check-sbx
+    when:
+      command: [sbx, version]
+    then:
+      output: ["sbx version v0.53.0 3f2a1c9"]
+
+  - id: sbx-login
+    completes: sign-in
+    when:
+      command: [sbx, login]
+    then:
+      output:
+        - "Opening https://login.docker.com/activate in your browser..."
+        - { text: "Waiting for authentication...", delay: short }
+        - { text: "✓ Signed in as your-docker-id", delay: medium }
+        - "Default network policy: Balanced"
+
+  - id: sbx-diagnose
+    completes: run-diagnose
+    when:
+      command: [sbx, diagnose]
+    then:
+      output:
+        - "INSTALLATION"
+        - "  ✓ sbx CLI"
+        - "  ✓ Version"
+        - "PLATFORM"
+        - { text: "  ✓ Virtualization", delay: short }
+        - "  ✓ Daemon"
+        - "CONNECTION"
+        - { text: "  ✓ Authentication", delay: short }
+        - "  ✓ Global network policy"
+        - "OPTIONAL"
+        - "  ✗ SSH client config (not used by this lab)"
+        - ""
+        - "All required checks passed."
+
+  - id: sbx-create-warmup-shell
+    when:
+      command: [sbx, create, shell]
+      args:
+        --name: "warmup-shell"
+    then:
+      state: { sandboxes.warmupShell: true }
+      output:
+        - "Pulling the shell sandbox image..."
+        - { text: "  docker.io/sbx/shell: Pull complete", delay: pull }
+        - "✓ Created sandbox 'warmup-shell'"
+
+  - id: sbx-create-warmup-copilot
+    when:
+      command: [sbx, create, copilot]
+      args:
+        --name: "warmup-copilot"
+    then:
+      state: { sandboxes.warmupCopilot: true }
+      output:
+        - "Pulling the copilot sandbox image..."
+        - { text: "  docker.io/sbx/copilot: Pull complete", delay: pull }
+        - "✓ Created sandbox 'warmup-copilot'"
+
+  # `--force` swallows the first name as its value (see the flag parser), so the
+  # command arrives as: sbx rm warmup-copilot  with force=warmup-shell.
+  - id: sbx-rm-warmup
+    completes: warm-up
+    when:
+      command: [sbx, rm]
+      args:
+        0: "warmup-copilot"
+    then:
+      state:
+        sandboxes.warmupShell: false
+        sandboxes.warmupCopilot: false
+      output:
+        - "✓ Removed sandbox 'warmup-shell'"
+        - "✓ Removed sandbox 'warmup-copilot'"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 01: network policies
+  # sbx policy ls shows a different table depending on how far you got.
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: policy-ls-lab-mcp
+    completes: verify-rules
+    when:
+      command: [sbx, policy, ls]
+      state:
+        rules.github: true
+        rules.python: true
+        rules.dockerhub: true
+        rules.npm: true
+        sandboxes.mcp: true
+    then:
+      output:
+        - "POLICY             SOURCE   APPLIES TO           SUMMARY"
+        - "default-deny-all   local    all                  network: deny when no rule decides"
+        - "local-policy       local    all                  network: 10 allow; filesystem read: 1 allow; filesystem write: 1 allow"
+        - "kit-quickstart     kit      sandbox:quickstart   network: the Copilot hosts, plus the Python kit's"
+        - "kit-mcp            kit      sandbox:mcp          network: the Copilot hosts, plus the Trivy kit's"
+
+  - id: policy-ls-lab-quickstart
+    completes: verify-rules
+    when:
+      command: [sbx, policy, ls]
+      state:
+        rules.github: true
+        rules.python: true
+        rules.dockerhub: true
+        rules.npm: true
+        sandboxes.quickstart: true
+    then:
+      output:
+        - "POLICY             SOURCE   APPLIES TO           SUMMARY"
+        - "default-deny-all   local    all                  network: deny when no rule decides"
+        - "local-policy       local    all                  network: 10 allow; filesystem read: 1 allow; filesystem write: 1 allow"
+        - "kit-quickstart     kit      sandbox:quickstart   network: the Copilot hosts, plus the Python kit's"
+
+  - id: policy-ls-lab
+    completes: verify-rules
+    when:
+      command: [sbx, policy, ls]
+      state:
+        rules.github: true
+        rules.python: true
+        rules.dockerhub: true
+        rules.npm: true
+    then:
+      output:
+        - "POLICY             SOURCE   APPLIES TO   SUMMARY"
+        - "default-deny-all   local    all          network: deny when no rule decides"
+        - "local-policy       local    all          network: 10 allow; filesystem read: 1 allow; filesystem write: 1 allow"
+
+  - id: policy-ls-locked
+    when:
+      command: [sbx, policy, ls]
+      state: { policy.stage: locked }
+    then:
+      output:
+        - "  POLICY             SOURCE   APPLIES TO   SUMMARY"
+        - "  default-deny-all   local    all          network: deny when no rule decides"
+        - "  local-policy       local    all          filesystem read: 1 allow; filesystem write: 1 allow"
+
+  - id: policy-ls-none
+    when:
+      command: [sbx, policy, ls]
+      state: { policy.stage: none }
+    then:
+      output:
+        - "No policies configured. Choose a default with: sbx policy init <balanced|deny-all|allow-all>"
+
+  - id: policy-ls-balanced
+    completes: check-policies
+    when:
+      command: [sbx, policy, ls]
+    then:
+      output:
+        - "POLICY             SOURCE   APPLIES TO   SUMMARY"
+        - "default-deny-all   local    all          network: deny when no rule decides"
+        - "local-policy       local    all          network: 195 allow; filesystem read: 1 allow; filesystem write: 1 allow"
+
+  # `sbx policy reset --force` (the non-interactive way) comes first: the plain
+  # command below also matches when --force is present.
+  - id: policy-reset-force
+    when:
+      command: [sbx, policy, reset]
+      args:
+        --force: true
+    then:
+      state:
+        policy.stage: none
+        policy.dockerAllowed: false
+        policy.adsDenied: false
+        rules.github: false
+        rules.python: false
+        rules.dockerhub: false
+        rules.npm: false
+      output:
+        - "Restarting the daemon..."
+        - { text: "✓ Policies reset. Pick a default with: sbx policy init <profile>", delay: medium }
+
+  - id: policy-reset-interactive
+    completes: reset-policy
+    when:
+      command: [sbx, policy, reset]
+    then:
+      state:
+        policy.stage: locked
+        policy.dockerAllowed: false
+        policy.adsDenied: false
+        rules.github: false
+        rules.python: false
+        rules.dockerhub: false
+        rules.npm: false
+      output:
+        - "Restarting the daemon..."
+        - { text: "✓ Policies reset.", delay: medium }
+        - ""
+        - "Choose a default network policy:"
+        - "    Open         All traffic allowed"
+        - "    Balanced     Default deny, with a broad allow-list"
+        - "  ▸ Locked Down  Everything blocked until you allow it"
+        - ""
+        - "(In this simulation, Locked Down is selected for you.)"
+        - "✓ Default policy: Locked Down"
+
+  - id: policy-init-deny-all
+    completes: reset-policy
+    when:
+      command: [sbx, policy, init]
+      args:
+        0: "deny-all"
+    then:
+      state: { policy.stage: locked }
+      output: ["✓ Default policy: Locked Down (deny-all)"]
+
+  - id: policy-init-balanced
+    when:
+      command: [sbx, policy, init]
+      args:
+        0: "balanced"
+    then:
+      state: { policy.stage: balanced }
+      output: ["✓ Default policy: Balanced"]
+
+  - id: policy-check-docker-allowed
+    when:
+      command: [sbx, policy, check, network]
+      args:
+        0: "docker.com"
+      state: { policy.dockerAllowed: true }
+    then:
+      output:
+        - "    Allowed:     docker.com:443"
+        - "    Governance:  Local policy only"
+        - "    Context:     global"
+
+  - id: policy-check-docker-denied
+    completes: check-denied
+    when:
+      command: [sbx, policy, check, network]
+      args:
+        0: "docker.com"
+    then:
+      output:
+        - "    Denied:      docker.com:443"
+        - "    Governance:  Local policy only"
+        - "    Context:     global"
+        - "    Reason:      no matching allow rule (default deny)"
+
+  - id: policy-check-github
+    when:
+      command: [sbx, policy, check, network]
+      args:
+        0: { oneOf: ["api.github.com", "api.individual.githubcopilot.com"] }
+      state: { rules.github: true }
+    then:
+      output:
+        - "    Allowed:     {{ args.0 }}:443"
+        - "    Governance:  Local policy only"
+        - "    Context:     global"
+
+  - id: policy-check-any
+    when:
+      command: [sbx, policy, check, network]
+      args:
+        0: { any: true }
+    then:
+      output:
+        - "    Denied:      {{ args.0 }}:443"
+        - "    Governance:  Local policy only"
+        - "    Context:     global"
+        - "    Reason:      no matching allow rule (default deny)"
+
+  # The allow rules. Each of the lab's four rules is matched by its exact host list.
+  - id: policy-allow-docker
+    completes: allow-host
+    when:
+      command: [sbx, policy, allow, network]
+      args:
+        0: "docker.com"
+    then:
+      state: { policy.dockerAllowed: true }
+      output: ["✓ Added allow rule: docker.com"]
+
+  - id: policy-allow-github
+    completes: allow-github
+    when:
+      command: [sbx, policy, allow, network]
+      args:
+        0: "github.com,**.github.com,**.githubcopilot.com"
+    then:
+      state: { rules.github: true }
+      output:
+        - "✓ Added allow rule: github.com"
+        - "✓ Added allow rule: **.github.com"
+        - "✓ Added allow rule: **.githubcopilot.com"
+
+  - id: policy-allow-python
+    completes: allow-python
+    when:
+      command: [sbx, policy, allow, network]
+      args:
+        0: "deb.debian.org,dhi.io,pypi.org,files.pythonhosted.org"
+    then:
+      state: { rules.python: true }
+      output:
+        - "✓ Added allow rule: deb.debian.org"
+        - "✓ Added allow rule: dhi.io"
+        - "✓ Added allow rule: pypi.org"
+        - "✓ Added allow rule: files.pythonhosted.org"
+
+  - id: policy-allow-docker-hub
+    completes: allow-docker-hub
+    when:
+      command: [sbx, policy, allow, network]
+      args:
+        0: "**.docker.io,production.cloudfront.docker.com"
+    then:
+      state: { rules.dockerhub: true }
+      output:
+        - "✓ Added allow rule: **.docker.io"
+        - "✓ Added allow rule: production.cloudfront.docker.com"
+
+  - id: policy-allow-npm
+    completes: allow-npm
+    when:
+      command: [sbx, policy, allow, network]
+      args:
+        0: "registry.npmjs.org"
+    then:
+      state: { rules.npm: true }
+      output: ["✓ Added allow rule: registry.npmjs.org"]
+
+  - id: policy-allow-any
+    when:
+      command: [sbx, policy, allow, network]
+      args:
+        0: { any: true }
+    then:
+      output: ["✓ Added allow rule: {{ args.0 }}"]
+
+  - id: policy-deny-any
+    when:
+      command: [sbx, policy, deny, network]
+      args:
+        0: { any: true }
+    then:
+      state: { policy.adsDenied: true }
+      output: ["✓ Added deny rule: {{ args.0 }}"]
+
+  # Note: the real command asks for confirmation; the simulation doesn't.
+  - id: policy-rm-docker
+    completes: remove-rules
+    when:
+      command: [sbx, policy, rm, network]
+      args:
+        --resource: "docker.com"
+    then:
+      state: { policy.dockerAllowed: false }
+      output: ["✓ Removed rule for docker.com"]
+
+  - id: policy-rm-ads
+    completes: remove-rules
+    when:
+      command: [sbx, policy, rm, network]
+      args:
+        --resource: "ads.example.com"
+    then:
+      state: { policy.adsDenied: false }
+      output: ["✓ Removed rule for ads.example.com"]
+
+  - id: policy-rm-any
+    when:
+      command: [sbx, policy, rm, network]
+      args:
+        --resource: { any: true }
+    then:
+      output: ["✓ Removed rule for {{ args.resource }}"]
+
+  # sbx policy log: one table per sandbox, abridged to the columns the lab needs.
+  - id: policy-log-quickstart-paste
+    when:
+      command: [sbx, policy, log]
+      args:
+        0: "quickstart"
+      state: { quickstart.pasteTried: true }
+    then:
+      output:
+        - "  BLOCKED REQUESTS"
+        - "  SANDBOX      TYPE      HOST           PROXY     REASON                                  COUNT"
+        - "  quickstart   network   paste.rs:443   forward   No matching allow rule (default deny)   1"
+
+  - id: policy-log-quickstart
+    when:
+      command: [sbx, policy, log]
+      args:
+        0: "quickstart"
+    then:
+      output: ["No requests recorded for sandbox 'quickstart' yet."]
+
+  - id: policy-log-mcp-scanned
+    completes: read-scan-log
+    when:
+      command: [sbx, policy, log]
+      args:
+        0: "mcp"
+      state: { scan.done: true }
+    then:
+      output:
+        - "  ALLOWED REQUESTS"
+        - "  SANDBOX   HOST                                 ALLOWED BY               COUNT"
+        - "  mcp       api.individual.githubcopilot.com     your rules               18"
+        - "  mcp       api.github.com                       your rules + kit         24"
+        - "  mcp       github.com                           your rules + kit         6"
+        - "  mcp       codeload.github.com                  your rules + kit         2"
+        - "  mcp       raw.githubusercontent.com            kit (this sandbox only)  3"
+        - "  mcp       mirror.gcr.io                        kit (this sandbox only)  4"
+        - "  mcp       index.docker.io                      your rules               4"
+        - "  mcp       auth.docker.io                       your rules               4"
+        - "  mcp       production.cloudfront.docker.com     your rules               9"
+        - "  mcp       dhi.io                               your rules               8"
+        - "  mcp       mcp-gateway.docker.internal          <daemon-managed alias>   6"
+        - ""
+        - "  BLOCKED REQUESTS"
+        - "  SANDBOX   HOST               REASON                                  COUNT"
+        - "  mcp       check.trivy.dev    No matching allow rule (default deny)   4"
+
+  - id: policy-log-mcp
+    completes: read-mcp-log
+    when:
+      command: [sbx, policy, log]
+      args:
+        0: "mcp"
+    then:
+      output:
+        - "  ALLOWED REQUESTS"
+        - "  SANDBOX   HOST                                 ALLOWED BY               COUNT"
+        - "  mcp       api.individual.githubcopilot.com     your rules               18"
+        - "  mcp       api.github.com                       your rules               11"
+        - "  mcp       mcp-gateway.docker.internal          <daemon-managed alias>   6"
+        - ""
+        - "  (No request to the DHI server, and no network rule for it: the agent only"
+        - "   talks to the gateway, which reaches the MCP server from outside the sandbox.)"
+
+  - id: policy-log-shell
+    when:
+      command: [sbx, policy, log]
+      args:
+        0: false
+      state: { shell.blocked: true }
+    then:
+      output:
+        - "  BLOCKED REQUESTS"
+        - "  SANDBOX     TYPE      HOST            PROXY     REASON                                  LAST SEEN        COUNT"
+        - "  shell-demo  network   docker.com:80   forward   No matching allow rule (default deny)   11:03:48 7-Nov   2"
+
+  - id: policy-log-empty
+    when:
+      command: [sbx, policy, log]
+    then:
+      output: ["No requests recorded yet."]
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 01 (continued): a shell sandbox, to watch the proxy at work.
+  # Inside a session, the lines you type are matched as agent prompts.
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: sbx-run-shell
+    when:
+      command: [sbx, run, shell]
+      args:
+        --name: "shell-demo"
+    then:
+      state: { sandboxes.shellDemo: true }
+      output:
+        - "Creating sandbox 'shell-demo' (workspace: /Users/you/sbx-lab)..."
+        - { text: "✓ Sandbox ready", delay: pull }
+      session:
+        prompt: "agent@shell-demo:~$ "
+        intro:
+          - "You are now inside the sandbox 'shell-demo'. Your prompt is the sandbox's."
+          - "In this simulation, leave it with /exit (in a real sandbox: exit)."
+        outro:
+          - "Back on your host."
+
+  - id: sbx-run-shell-again
+    when:
+      command: [sbx, run]
+      args:
+        --name: "shell-demo"
+      state: { sandboxes.shellDemo: true }
+    then:
+      session:
+        prompt: "agent@shell-demo:~$ "
+        intro:
+          - "Reconnected to the sandbox 'shell-demo'. Leave it with /exit."
+        outro:
+          - "Back on your host."
+
+  - id: shell-curl-allowed
+    completes: shell-allowed
+    when:
+      agent: true
+      promptContains: [curl, docker.com]
+      state: { policy.dockerAllowed: true }
+    then:
+      output:
+        - "HTTP/1.1 301 Moved Permanently"
+        - "Location: https://docker.com/"
+        - "Content-Length: 0"
+
+  - id: shell-curl-blocked
+    completes: shell-blocked
+    when:
+      agent: true
+      promptContains: [curl, docker.com]
+    then:
+      state: { shell.blocked: true }
+      output:
+        - "Approval required for docker.com:80."
+        - ""
+        - "Review and respond with:"
+        - "  sbx policy approval ls"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 02: kits
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: kit-inspect-copilot-yaml
+    completes: inspect-copilot-kit
+    when:
+      command: [sbx, kit, inspect, sbx/copilot]
+      args:
+        --format: "yaml"
+    then:
+      output:
+        - 'schemaVersion: "3"'
+        - "kind: sandbox"
+        - "name: copilot"
+        - "displayName: GitHub Copilot"
+        - "description: GitHub Copilot CLI, GitHub's agentic coding CLI."
+        - "sourceURL: https://github.com/docker-hardened-images/definitions"
+        - "licenses:"
+        - "- LicenseRef-Proprietary"
+        - "sandbox:"
+        - "  image: docker.io/sbx/copilot@sha256:f9c2331f..."
+        - "  entrypoint:"
+        - "  - copilot"
+        - "  command:"
+        - "    default:"
+        - "    - --yolo"
+
+  - id: kit-inspect-copilot
+    completes: inspect-copilot-kit
+    when:
+      command: [sbx, kit, inspect, sbx/copilot]
+    then:
+      output:
+        - "  Name:         copilot"
+        - "  Kind:         sandbox"
+        - "  Schema:       v3"
+        - "  Display:      GitHub Copilot"
+        - "  Description:  GitHub Copilot CLI, GitHub's agentic coding CLI."
+        - "  Binary:       copilot"
+        - "  Template:     docker.io/sbx/copilot@sha256:f9c2331f..."
+        - "  Run Options:  --yolo"
+        - "  Policies:     none"
+
+  - id: kit-inspect-claude
+    completes: compare-claude-kit
+    when:
+      command: [sbx, kit, inspect, sbx/claude]
+    then:
+      output:
+        - "  Name:         claude"
+        - "  Kind:         sandbox"
+        - "  Schema:       v3"
+        - "  Display:      Claude Code"
+        - "  Binary:       claude"
+        - "  Arguments:    model, reasoningEffort"
+        - "  Policies:"
+        - "    Environment:  2 variables"
+        - "  AI files:     /home/agent/.claude/CLAUDE.md"
+        - ""
+        - "(Abridged: the real output has more fields.)"
+
+  - id: kit-validate-python
+    completes: validate-python-kit
+    when:
+      command: [sbx, kit, validate, ./project/kits/python]
+    then:
+      output: ["  ✓ ./project/kits/python — valid (directory)"]
+
+  - id: kit-inspect-python
+    completes: inspect-python-kit
+    when:
+      command: [sbx, kit, inspect, ./project/kits/python]
+    then:
+      output:
+        - "  Name:         python"
+        - "  Kind:         mixin"
+        - "  Schema:       v3"
+        - "  Display:      Python"
+        - "  Description:  Python 3 with venv and pip, installed when the sandbox is created"
+        - "  Template:     sbx-kit-src:python-14804de38edb"
+        - "  Policies:"
+        - "    Network:    2 allow, 0 deny"
+        - "    Commands:   1 install, 0 startup, 0 init files"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 03: secrets
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: secret-set-github
+    completes: store-github-secret
+    when:
+      command: [sbx, secret, set, github]
+    then:
+      state: { secrets.github: true }
+      output: ["✓ Secret 'github' stored in your OS keychain (global), read with: gh auth token"]
+
+  - id: secret-set-copilot
+    completes: store-copilot-secret
+    when:
+      command: [sbx, secret, set, copilot]
+    then:
+      state: { secrets.copilot: true }
+      output: ["✓ Secret 'copilot' stored in your OS keychain (global), read with: gh auth token"]
+
+  - id: secret-ls-both
+    completes: list-secrets
+    when:
+      command: [sbx, secret, ls]
+      state:
+        secrets.github: true
+        secrets.copilot: true
+    then:
+      output:
+        - "SCOPE      TYPE      NAME      SECRET"
+        - "(global)   service   github    (stored)"
+        - "(global)   service   copilot   (stored)"
+
+  - id: secret-ls-github
+    when:
+      command: [sbx, secret, ls]
+      state: { secrets.github: true }
+    then:
+      output:
+        - "SCOPE      TYPE      NAME      SECRET"
+        - "(global)   service   github    (stored)"
+
+  - id: secret-ls-copilot
+    when:
+      command: [sbx, secret, ls]
+      state: { secrets.copilot: true }
+    then:
+      output:
+        - "SCOPE      TYPE      NAME      SECRET"
+        - "(global)   service   copilot   (stored)"
+
+  - id: secret-ls-none
+    when:
+      command: [sbx, secret, ls]
+    then:
+      output: ["No secrets stored."]
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 04: your agent's sandbox
+  # ════════════════════════════════════════════════════════════════════════
+
+  # The kit paths in the lab are relative to project/, so creating from the
+  # repository root fails: a common mistake worth reproducing.
+  - id: create-wrong-dir
+    when:
+      command: [sbx, create, copilot]
+      args:
+        --kit: { oneOf: ["./kits/python", "./kits/trivy", "./kits/api-port"] }
+      state: { cwd: root }
+    then:
+      stderr:
+        - "Error: kit './kits/python' not found."
+        - "Run this command from the project directory: cd project"
+      exit: 1
+
+  - id: create-quickstart-exists
+    when:
+      command: [sbx, create, copilot]
+      args:
+        --name: "quickstart"
+      state: { sandboxes.quickstart: true }
+    then:
+      stderr:
+        - 'Error: sandbox "quickstart" already exists. Remove it with: sbx rm quickstart'
+      exit: 1
+
+  - id: create-quickstart
+    completes: create-sandbox
+    when:
+      command: [sbx, create, copilot]
+      args:
+        --name: "quickstart"
+    then:
+      state: { sandboxes.quickstart: true }
+      output:
+        - "Creating sandbox 'quickstart'..."
+        - "  Kits:       docker.io/sbx/copilot@sha256:f9c2331f..."
+        - "              ./kits/python"
+        - "  Workspace:  /Users/you/sbx-lab/project"
+        - { text: "  ...", delay: short }
+        - "    running 3 install commands"
+        - "      ..."
+        - { text: "      $ Install Python 3, venv and pip (kit=python, user=0)", delay: pull }
+        - "✓ Created sandbox 'quickstart'"
+
+  - id: create-mcp-no-server
+    when:
+      command: [sbx, create, copilot]
+      args:
+        --static-mcp: "dhi"
+      state: { mcp.registered: false }
+    then:
+      stderr:
+        - "Error: MCP server 'dhi' is not registered. Register it first: sbx mcp add dhi --url https://dhi.io/mcp"
+      exit: 1
+
+  - id: create-mcp-exists
+    when:
+      command: [sbx, create, copilot]
+      args:
+        --name: "mcp"
+      state: { sandboxes.mcp: true }
+    then:
+      stderr:
+        - 'Error: sandbox "mcp" already exists. Remove it with: sbx rm mcp'
+      exit: 1
+
+  - id: create-mcp
+    completes: create-mcp-sandbox
+    when:
+      command: [sbx, create, copilot]
+      args:
+        --name: "mcp"
+        --static-mcp: "dhi"
+    then:
+      state: { sandboxes.mcp: true }
+      output:
+        - "Building the kit './kits/trivy' (first time)..."
+        - { text: "  downloading trivy 0.70.0 and checking its SHA256... done", delay: pull }
+        - "Creating sandbox 'mcp'..."
+        - "  Kits:       docker.io/sbx/copilot@sha256:f9c2331f..."
+        - "              ./kits/trivy"
+        - "  MCP:        dhi (static: the gateway starts with exactly this server)"
+        - "  Workspace:  /Users/you/sbx-lab/project"
+        - "✓ Created sandbox 'mcp'"
+
+  - id: create-ports-demo
+    when:
+      command: [sbx, create, copilot]
+      args:
+        --name: "ports-demo"
+    then:
+      state: { sandboxes.portsDemo: true }
+      output:
+        - "Creating sandbox 'ports-demo'..."
+        - "  Kits:       docker.io/sbx/copilot@sha256:f9c2331f..."
+        - "              ./kits/python"
+        - "              ./kits/api-port"
+        - { text: "  Publishing sandbox port 8000 on 127.0.0.1:60020", delay: short }
+        - "✓ Created sandbox 'ports-demo'"
+
+  # sbx ls grows with the lab. One table per stage, picked by state.
+  - id: ls-full
+    when:
+      command: [sbx, ls]
+      state: { sandboxes.mcp: true }
+    then:
+      output:
+        - "SANDBOX      AGENT     STATUS    WORKSPACE"
+        - "quickstart   copilot   running   /Users/you/sbx-lab/project"
+        - "fix-bugs     copilot   running   /Users/you/sbx-lab (clone)"
+        - "add-search   copilot   running   /Users/you/sbx-lab (clone)"
+        - "add-notif    copilot   running   /Users/you/sbx-lab (clone)"
+        - "mcp          copilot   running   /Users/you/sbx-lab/project"
+        - "shell-demo   shell     stopped   /Users/you/sbx-lab"
+
+  - id: ls-quickstart
+    when:
+      command: [sbx, ls]
+      state: { sandboxes.quickstart: true }
+    then:
+      output:
+        - "SANDBOX      AGENT     STATUS    WORKSPACE"
+        - "quickstart   copilot   running   /Users/you/sbx-lab/project"
+        - "shell-demo   shell     stopped   /Users/you/sbx-lab"
+
+  - id: ls-shell-demo
+    when:
+      command: [sbx, ls]
+      state: { sandboxes.shellDemo: true }
+    then:
+      output:
+        - "SANDBOX      AGENT   STATUS    WORKSPACE"
+        - "shell-demo   shell   stopped   /Users/you/sbx-lab"
+
+  - id: ls-empty
+    when:
+      command: [sbx, ls]
+    then:
+      output: ["No sandboxes."]
+
+  - id: exec-python-version
+    completes: check-python
+    when:
+      command: [sbx, exec, quickstart, python3]
+      state: { sandboxes.quickstart: true }
+    then:
+      output: ["Python 3.13.5"]
+
+  - id: exec-env-token
+    completes: check-token
+    when:
+      command: [sbx, exec, quickstart, sh]
+      args:
+        -c: "env | grep _TOKEN="
+      state: { sandboxes.quickstart: true }
+    then:
+      output:
+        - "GH_TOKEN=proxy-managed"
+        - "COPILOT_GITHUB_TOKEN=proxy-managed"
+
+  - id: exec-pwd-ls
+    completes: check-workspace
+    when:
+      command: [sbx, exec, quickstart, sh]
+      args:
+        -c: "pwd; ls -A ~"
+      state: { sandboxes.quickstart: true }
+    then:
+      output:
+        - "/Users/you/sbx-lab/project"
+        - ".bashrc"
+        - ".config"
+        - ".copilot"
+        - ".gitconfig"
+        - ".profile"
+
+  - id: exec-paste-upload
+    completes: block-upload
+    when:
+      command: [sbx, exec, quickstart, curl]
+      state: { sandboxes.quickstart: true }
+    then:
+      state: { quickstart.pasteTried: true }
+      output:
+        - "Approval required for paste.rs:443."
+        - ""
+        - "Review and respond with:"
+        - "  sbx policy approval ls"
+
+  - id: exec-no-quickstart
+    when:
+      command: [sbx, exec, quickstart]
+      state: { sandboxes.quickstart: false }
+    then:
+      stderr:
+        - 'Error: sandbox "quickstart" not found. Create it first (see "Agent sandbox").'
+      exit: 1
+
+  - id: exec-ports-demo-server
+    when:
+      command: [sbx, exec, ports-demo, sh]
+      state: { sandboxes.portsDemo: true }
+    then:
+      state: { ports.demoServer: true }
+
+  - id: exec-scan-images
+    completes: scan-images
+    when:
+      command: [sbx, exec, mcp, scan-images]
+      state: { sandboxes.mcp: true }
+    then:
+      state: { scan.done: true }
+      output:
+        - "Downloading the vulnerability database (about 130 MB) and the VEX statements..."
+        - { text: "python:3.12-slim         88 vulnerabilities (0 critical, 15 high)", delay: scan }
+        - { text: "dhi.io/python:3.12       54 vulnerabilities (0 critical, 7 high)", delay: scan }
+        - { text: "node:22-alpine           16 vulnerabilities (0 critical, 6 high)", delay: scan }
+        - { text: "dhi.io/node:22-alpine    0 vulnerabilities (0 critical, 0 high)", delay: scan }
+
+  - id: exec-no-mcp
+    when:
+      command: [sbx, exec, mcp]
+      state: { sandboxes.mcp: false }
+    then:
+      stderr:
+        - 'Error: sandbox "mcp" not found. Create it first (see "MCP servers").'
+      exit: 1
+
+  # ── Starting an agent session ────────────────────────────────────────────
+
+  - id: run-detach
+    when:
+      command: [sbx, run]
+      args:
+        --detach: true
+        --name: { any: true }
+    then:
+      output:
+        - "✓ Sandbox '{{ args.name }}' is running in the background"
+
+  - id: run-clone-wrong-dir
+    when:
+      command: [sbx, run, copilot]
+      args:
+        --clone: true
+      state: { cwd: project }
+    then:
+      stderr:
+        - "Error: --clone requires a Git repository"
+        - "Run this command from the root of the repository: cd .."
+      exit: 1
+
+  - id: run-clone-fix-bugs
+    when:
+      command: [sbx, run, copilot]
+      args:
+        --clone: true
+        --name: "fix-bugs"
+    then:
+      state: { sandboxes.fixBugs: true }
+      output:
+        - "Creating sandbox 'fix-bugs' (clone of /Users/you/sbx-lab, committed code only)..."
+        - { text: "✓ Sandbox ready. The agent works in a private Git clone; your working tree is read-only to it.", delay: pull }
+      session:
+        prompt: "copilot (fix-bugs)> "
+        intro:
+          - "GitHub Copilot CLI (scripted) · sandbox 'fix-bugs' · private clone"
+          - "Running with --yolo. Type /exit to leave this simulated session."
+        outro:
+          - "Session ended. The sandbox keeps its clone: fetch it with git fetch sandbox-fix-bugs."
+
+  - id: run-clone-add-search
+    completes: start-search-agent
+    when:
+      command: [sbx, run, copilot]
+      args:
+        --clone: true
+        --name: "add-search"
+    then:
+      state: { sandboxes.addSearch: true }
+      output:
+        - "Creating sandbox 'add-search' (clone of /Users/you/sbx-lab, committed code only)..."
+        - { text: "✓ Sandbox ready.", delay: pull }
+      session:
+        prompt: "copilot (add-search)> "
+        intro:
+          - "GitHub Copilot CLI (scripted) · sandbox 'add-search' · private clone"
+          - "Starting with the prompt from project/prompts/implement-search.txt"
+          - ""
+          - "● Read AGENTS.md, backend/app/routers/issues.py (list_issues, search_issues)"
+          - "● Set up Python: python3 -m venv ~/venv && ~/venv/bin/pip install -r backend/requirements.txt"
+          - "● Edit backend/app/routers/issues.py"
+          - "    + from sqlalchemy import or_"
+          - "    + filter on title.ilike OR description.ilike, ordered by updated_at desc"
+          - "    - raise HTTPException(status_code=501, ...)"
+          - "● Edit backend/tests/test_issues.py: remove the xfail marker from test_search_finds_matching_issues"
+          - "● Run: ~/venv/bin/pytest tests/ -v"
+          - "    15 passed, 1 failed (test_updated_at_changes_on_update, unrelated: not touched)"
+          - "● git commit -m \"Implement issue search, un-xfail the search test\""
+          - ""
+          - "Done. The search endpoint is implemented and its test passes."
+          - "The session stays open, like in the real lab: fetch the work from another terminal,"
+          - "then leave with /exit."
+        outro:
+          - "Session ended."
+
+  - id: run-clone-add-notif
+    completes: start-notif-agent
+    when:
+      command: [sbx, run, copilot]
+      args:
+        --clone: true
+        --name: "add-notif"
+    then:
+      state: { sandboxes.addNotif: true }
+      output:
+        - "Creating sandbox 'add-notif' (clone of /Users/you/sbx-lab, committed code only)..."
+        - { text: "✓ Sandbox ready.", delay: pull }
+      session:
+        prompt: "copilot (add-notif)> "
+        intro:
+          - "GitHub Copilot CLI (scripted) · sandbox 'add-notif' · private clone"
+          - "Starting with the prompt from project/prompts/implement-notifications.txt"
+          - ""
+          - "● Read AGENTS.md, services/notifications.py, update_issue() in routers/issues.py"
+          - "● Set up Python: python3 -m venv ~/venv && ~/venv/bin/pip install -r backend/requirements.txt"
+          - "● Edit backend/app/services/notifications.py"
+          - "    smtplib via asyncio.to_thread, SMTP_HOST / SMTP_PORT (587) / SMTP_USER / SMTP_PASS,"
+          - "    a warning and return when unset, SMTP errors caught and logged"
+          - "● Create backend/tests/test_notifications.py (3 tests, smtplib.SMTP mocked)"
+          - "● Run: ~/venv/bin/pytest tests/ -v"
+          - "    17 passed, 1 failed (test_updated_at_changes_on_update, unrelated), 1 xfailed"
+          - "● git commit -m \"Send email notifications when an issue's status changes\""
+          - ""
+          - "Done. Notifications are implemented and tested."
+          - "The session stays open: fetch the work from another terminal, then leave with /exit."
+        outro:
+          - "Session ended."
+
+  - id: run-quickstart
+    when:
+      command: [sbx, run]
+      args:
+        --name: "quickstart"
+      state: { sandboxes.quickstart: true }
+    then:
+      output:
+        - "Attaching to sandbox 'quickstart'..."
+      session:
+        prompt: "copilot> "
+        intro:
+          - "GitHub Copilot CLI (scripted) · sandbox 'quickstart' · workspace /Users/you/sbx-lab/project"
+          - "Running with --yolo: tools run without asking. Type /exit to leave (in the real session: Ctrl-C twice)."
+        outro:
+          - "Session ended. The sandbox stops shortly after its last session; files and packages stay."
+
+  - id: run-mcp
+    when:
+      command: [sbx, run]
+      args:
+        --name: "mcp"
+      state: { sandboxes.mcp: true }
+    then:
+      output:
+        - "Attaching to sandbox 'mcp'..."
+      session:
+        prompt: "copilot (mcp)> "
+        intro:
+          - "GitHub Copilot CLI (scripted) · sandbox 'mcp' · MCP gateway with: dhi"
+          - "Running with --yolo. Type /exit to leave."
+        outro:
+          - "Session ended."
+
+  - id: run-not-found
+    when:
+      command: [sbx, run]
+      args:
+        --name: { any: true }
+    then:
+      stderr:
+        - 'Error: sandbox "{{ args.name }}" not found. Create it first with sbx create (see the module).'
+      exit: 1
+
+  # ── The agent's answers ──────────────────────────────────────────────────
+
+  - id: agent-explore
+    completes: meet-agent
+    when:
+      agent: true
+      promptContains: [explore, codebase]
+    then:
+      output:
+        - { text: "● Read AGENTS.md, README.md, docker-compose.yml, backend/app/main.py, frontend/package.json (+ 14 files)", delay: work }
+        - ""
+        - "1. Architecture and stack"
+        - "   - Backend: FastAPI + SQLAlchemy, JWT auth, PostgreSQL in Compose (in-memory SQLite in the tests)"
+        - "   - Frontend: Next.js 16 / React 19 / Tailwind, talks to the API at NEXT_PUBLIC_API_URL"
+        - "   - Routers: auth, projects, issues, comments. Notifications live in services/notifications.py"
+        - ""
+        - "2. Run it locally"
+        - "   - Backend: python3 -m venv ~/venv; pip install -r backend/requirements.txt;"
+        - "     uvicorn app.main:app --host 0.0.0.0 --port 8000 (needs DATABASE_URL)"
+        - "   - Frontend: cd frontend && npm ci && npm run dev"
+        - ""
+        - "3. Things I noticed"
+        - "   - list_issues() computes skip = page * page_size, which skips the first page"
+        - "   - update_issue() has no authorization check beyond project ownership (see the BUG comment)"
+        - "   - updated_at columns have no onupdate, so they never change"
+        - "   - the search endpoint returns 501; notifications only log"
+        - ""
+        - "4. Test coverage"
+        - "   - 16 tests: auth (7) and issues (9). Three fail on purpose (pagination x2, updated_at),"
+        - "     and the search test is marked xfail."
+
+  # One scenario per state of the code: the same prompt ("run the test suite")
+  # is asked at four different moments of the lab.
+  - id: agent-tests-all-merged
+    completes: verify-merged
+    when:
+      agent: true
+      promptContains: [test suite]
+      state:
+        repo.mergedFix: true
+        repo.mergedSearch: true
+        repo.mergedNotif: true
+    then:
+      output:
+        - { text: "● Run: cd backend && ~/venv/bin/pytest tests/ -v", delay: work }
+        - "collected 19 items"
+        - ""
+        - "tests/test_auth.py ...........................................  7 passed"
+        - "tests/test_issues.py::test_pagination_first_page_returns_results PASSED"
+        - "tests/test_issues.py::test_pagination_second_page PASSED"
+        - "tests/test_issues.py::test_search_finds_matching_issues PASSED"
+        - "tests/test_issues.py::test_updated_at_changes_on_update PASSED"
+        - "tests/test_notifications.py ...                                 3 passed"
+        - ""
+        - "============================== 19 passed in 5.31s =============================="
+        - ""
+        - "All the tests pass, including the search test and the 3 new notification tests."
+
+  - id: agent-tests-fix-merged
+    when:
+      agent: true
+      promptContains: [test suite]
+      state: { repo.mergedFix: true }
+    then:
+      output:
+        - { text: "● Run: cd backend && ~/venv/bin/pytest tests/ -v", delay: work }
+        - "collected 16 items"
+        - ""
+        - "tests/test_issues.py::test_pagination_first_page_returns_results PASSED"
+        - "tests/test_issues.py::test_pagination_second_page PASSED"
+        - "tests/test_issues.py::test_search_finds_matching_issues XFAIL"
+        - "tests/test_issues.py::test_updated_at_changes_on_update PASSED"
+        - ""
+        - "===================== 15 passed, 1 xfailed in 5.02s ====================="
+
+  - id: agent-tests-pagination-fixed
+    completes: confirm-fix
+    when:
+      agent: true
+      promptContains: [test suite]
+      state: { code.paginationFixed: true }
+    then:
+      output:
+        - { text: "● Run: cd backend && ~/venv/bin/pytest tests/ -v", delay: work }
+        - "collected 16 items"
+        - ""
+        - "tests/test_issues.py::test_pagination_first_page_returns_results PASSED"
+        - "tests/test_issues.py::test_pagination_second_page PASSED"
+        - "tests/test_issues.py::test_search_finds_matching_issues XFAIL"
+        - "tests/test_issues.py::test_updated_at_changes_on_update FAILED"
+        - ""
+        - "FAILED tests/test_issues.py::test_updated_at_changes_on_update - AssertionError: updated_at did not change"
+        - "===================== 1 failed, 14 passed, 1 xfailed in 5.12s ====================="
+        - ""
+        - "The two pagination tests now pass. test_updated_at_changes_on_update still fails and the"
+        - "search test is still an expected failure: the next module deals with those."
+
+  - id: agent-tests-initial
+    completes: run-tests
+    when:
+      agent: true
+      promptContains: [test suite]
+    then:
+      output:
+        - { text: "● Set up Python: python3 -m venv ~/venv && ~/venv/bin/pip install -r backend/requirements.txt", delay: work }
+        - { text: "● Run: cd backend && ~/venv/bin/pytest tests/ -v", delay: work }
+        - "============================= test session starts =============================="
+        - "platform linux -- Python 3.13.5, pytest-9.2.0"
+        - "rootdir: /Users/you/sbx-lab/project/backend"
+        - "collected 16 items"
+        - ""
+        - "tests/test_auth.py::test_register_new_user PASSED                        [  6%]"
+        - "tests/test_auth.py::test_register_duplicate_email PASSED                 [ 12%]"
+        - "tests/test_auth.py::test_register_duplicate_username PASSED              [ 18%]"
+        - "tests/test_auth.py::test_login_success PASSED                            [ 25%]"
+        - "tests/test_auth.py::test_login_wrong_password PASSED                     [ 31%]"
+        - "tests/test_auth.py::test_get_current_user PASSED                         [ 37%]"
+        - "tests/test_auth.py::test_get_current_user_unauthenticated PASSED         [ 43%]"
+        - "tests/test_issues.py::test_create_issue PASSED                           [ 50%]"
+        - "tests/test_issues.py::test_get_issue PASSED                              [ 56%]"
+        - "tests/test_issues.py::test_update_issue_status PASSED                    [ 62%]"
+        - "tests/test_issues.py::test_delete_issue PASSED                           [ 68%]"
+        - "tests/test_issues.py::test_pagination_first_page_returns_results FAILED  [ 75%]"
+        - "tests/test_issues.py::test_pagination_total_count PASSED                 [ 81%]"
+        - "tests/test_issues.py::test_pagination_second_page FAILED                 [ 87%]"
+        - "tests/test_issues.py::test_search_finds_matching_issues XFAIL            [ 93%]"
+        - "tests/test_issues.py::test_updated_at_changes_on_update FAILED           [100%]"
+        - ""
+        - "FAILED test_pagination_first_page_returns_results - Expected 3 items on page 1 but got 2."
+        - "FAILED test_pagination_second_page - Expected 3 items on each page but got 3 and 0."
+        - "FAILED test_updated_at_changes_on_update - updated_at did not change after update."
+        - "===================== 3 failed, 12 passed, 1 xfailed in 4.82s ====================="
+        - ""
+        - "Diagnosis"
+        - "- Pagination (2 tests): list_issues() computes skip = page * page_size, so page 1 skips the"
+        - "  first page_size rows. It should be (page - 1) * page_size."
+        - "- updated_at: the Column definitions in models.py have no onupdate, so the value stays frozen."
+        - "- Search (xfail): the endpoint still returns 501, as expected."
+
+  - id: agent-fix-pagination
+    completes: fix-pagination
+    when:
+      agent: true
+      promptContains: [pagination, bug]
+      state: { code.paginationFixed: false }
+    then:
+      files:
+        - replace: "project/backend/app/routers/issues.py"
+          find: "skip = page * page_size"
+          with: "skip = (page - 1) * page_size"
+      state: { code.paginationFixed: true }
+      output:
+        - { text: "● Read backend/app/routers/issues.py, backend/tests/test_issues.py", delay: work }
+        - ""
+        - "The bug: list_issues() computes skip = page * page_size. Pages start at 1, so page 1 skips"
+        - "the first page_size rows (page 1 of 5 issues with page_size=3 returns 2), and page 2 of a"
+        - "6-item list skips everything and comes back empty."
+        - ""
+        - "● Edit backend/app/routers/issues.py"
+        - "    - skip = page * page_size"
+        - "    + skip = (page - 1) * page_size"
+        - { text: "● Run: pytest tests/test_issues.py::test_pagination_first_page_returns_results -v  PASSED", delay: work }
+        - { text: "● Run: pytest tests/test_issues.py::test_pagination_second_page -v               PASSED", delay: work }
+
+  - id: agent-fix-pagination-again
+    when:
+      agent: true
+      promptContains: [pagination, bug]
+    then:
+      output:
+        - "The pagination bug is already fixed in your working tree (skip = (page - 1) * page_size)."
+
+  - id: agent-fix-updated-at
+    completes: fix-in-clone
+    when:
+      agent: true
+      promptContains: [updated_at, models.py]
+      state: { clone.fixDone: false }
+    then:
+      state: { clone.fixDone: true }
+      output:
+        - { text: "● Read backend/app/models.py (Project.updated_at, Issue.updated_at)", delay: work }
+        - ""
+        - "Both updated_at columns only have default=utcnow, so SQLAlchemy sets the value on INSERT and"
+        - "never again. Adding onupdate=utcnow refreshes it on every UPDATE."
+        - ""
+        - "● Edit backend/app/models.py"
+        - "    - updated_at = Column(DateTime, default=utcnow)"
+        - "    + updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)   (x2)"
+        - { text: "● Run: pytest tests/ -v    15 passed, 1 xfailed", delay: work }
+        - "● git commit -m \"Refresh updated_at on every row update\""
+        - ""
+        - "Committed in the sandbox's private clone. Your working tree is untouched until you fetch and merge."
+
+  - id: agent-fix-updated-at-again
+    when:
+      agent: true
+      promptContains: [updated_at, models.py]
+    then:
+      output:
+        - "This was already fixed and committed in this clone. Fetch it: git fetch sandbox-fix-bugs"
+
+  - id: agent-start-stack
+    completes: start-stack
+    when:
+      agent: true
+      promptContains: [docker compose, health]
+    then:
+      state: { stack.up: true }
+      output:
+        - { text: "● Run: docker compose up --build -d", delay: work }
+        - { text: "    Pulling postgres:16-alpine, building backend and frontend (npm ci)...", delay: pull }
+        - "    ✔ Container project-db-1        Healthy"
+        - "    ✔ Container project-backend-1   Healthy"
+        - "    ✔ Container project-frontend-1  Started"
+        - "● curl http://localhost:8000/health   ->   {\"status\":\"ok\"}"
+        - "● POST /auth/register, POST /projects/, POST /projects/1/issues/ (x2)"
+        - ""
+        - "Final state:"
+        - "{"
+        - "  \"user\": { \"id\": 1, \"username\": \"testuser\", \"email\": \"test@example.com\" },"
+        - "  \"project\": { \"id\": 1, \"name\": \"Lab project\", \"owner_id\": 1 },"
+        - "  \"issues\": ["
+        - "    { \"id\": 1, \"title\": \"First issue\", \"status\": \"open\", \"priority\": \"medium\" },"
+        - "    { \"id\": 2, \"title\": \"Second issue\", \"status\": \"open\", \"priority\": \"high\" }"
+        - "  ]"
+        - "}"
+        - ""
+        - "Everything binds to 0.0.0.0, so the ports can be published to your host."
+
+  - id: agent-dhi
+    completes: ask-dhi
+    when:
+      agent: true
+      promptContains: [dockerfiles, hardened]
+    then:
+      output:
+        - { text: "● Read backend/Dockerfile (python:3.12-slim) and frontend/Dockerfile (node:22-alpine)", delay: work }
+        - ""
+        - "→ Calling MCP tool: dhi_get_repository"
+        - "  Arguments:"
+        - "    repository=python"
+        - { text: "  Result:", delay: work }
+        - "    python: runtime tag 3.12 (Debian 13), 54 known CVEs. The -dev variants add pip and a shell."
+        - ""
+        - "→ Calling MCP tool: dhi_get_repository"
+        - "  Arguments:"
+        - "    repository=node"
+        - { text: "  Result:", delay: work }
+        - "    node: runtime tag 22-alpine, 0 known CVEs. The -dev variants add npm and a shell."
+        - ""
+        - "Runtime hardened images (not -dev):"
+        - "  backend   python:3.12-slim  ->  dhi.io/python:3.12        54 known CVEs"
+        - "  frontend  node:22-alpine    ->  dhi.io/node:22-alpine      0 known CVEs"
+        - ""
+        - "Tools I called: dhi_get_repository (x2). I did not call any tool that changes your organization."
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 05: the TUI dashboard
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: tui-parallel
+    completes: open-dashboard
+    when:
+      command: [sbx]
+      args:
+        0: false
+      state:
+        sandboxes.addSearch: true
+        sandboxes.addNotif: true
+    then:
+      output:
+        - "┌ Sandboxes ──────────────────────────────────────────────────────────┐"
+        - "│ ● add-search    copilot   running   CPU 38%   MEM 1.1 GiB          │"
+        - "│ ● add-notif     copilot   running   CPU 41%   MEM 1.0 GiB          │"
+        - "│ ● fix-bugs      copilot   running   CPU  1%   MEM 380 MiB          │"
+        - "│ ● quickstart    copilot   running   CPU  1%   MEM 420 MiB          │"
+        - "└─────────────────────────────────────────────────────────────────────┘"
+        - "┌ Network (Tab) ──────────────────────────────────────────────────────┐"
+        - "│ add-search   ALLOWED   api.individual.githubcopilot.com             │"
+        - "│ add-notif    ALLOWED   api.individual.githubcopilot.com             │"
+        - "│ add-search   ALLOWED   pypi.org, files.pythonhosted.org             │"
+        - "│ add-notif    ALLOWED   pypi.org, files.pythonhosted.org             │"
+        - "└─────────────────────────────────────────────────────────────────────┘"
+        - "  c create   s start/stop   Enter attach   x shell   r remove   ? help"
+        - ""
+        - "(A snapshot: the real dashboard is live. Exit it with Ctrl-C, then Y.)"
+
+  - id: tui-quickstart
+    completes: open-dashboard
+    when:
+      command: [sbx]
+      args:
+        0: false
+      state: { sandboxes.quickstart: true }
+    then:
+      output:
+        - "┌ Sandboxes ──────────────────────────────────────────────────────────┐"
+        - "│ ● quickstart    copilot   running   CPU  1%   MEM 420 MiB          │"
+        - "└─────────────────────────────────────────────────────────────────────┘"
+        - "┌ Network (Tab) ──────────────────────────────────────────────────────┐"
+        - "│ quickstart   BLOCKED   paste.rs:443                                 │"
+        - "└─────────────────────────────────────────────────────────────────────┘"
+        - "  c create   s start/stop   Enter attach   x shell   r remove   ? help"
+        - ""
+        - "(A snapshot: the real dashboard is live. Exit it with Ctrl-C, then Y.)"
+
+  - id: tui-empty
+    completes: open-dashboard
+    when:
+      command: [sbx]
+      args:
+        0: false
+    then:
+      output:
+        - "┌ Sandboxes ──────────────────────────────────────────────────────────┐"
+        - "│ No sandboxes yet. Press c to create one.                            │"
+        - "└─────────────────────────────────────────────────────────────────────┘"
+        - ""
+        - "(A snapshot: the real dashboard is live. Exit it with Ctrl-C, then Y.)"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 06 and 07: git on your host
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: git-status-dirty
+    when:
+      command: [git, status]
+      state:
+        code.paginationFixed: true
+        repo.paginationCommitted: false
+    then:
+      output:
+        - "On branch main"
+        - "Changes not staged for commit:"
+        - "  (use \"git add <file>...\" to update what will be committed)"
+        - "        modified:   project/backend/app/routers/issues.py"
+        - ""
+        - "no changes added to commit (use \"git add\" and/or \"git commit -a\")"
+
+  - id: git-status-clean
+    when:
+      command: [git, status]
+    then:
+      output:
+        - "On branch main"
+        - "nothing to commit, working tree clean"
+
+  - id: git-diff-pagination
+    when:
+      command: [git, diff]
+      args:
+        0: false
+      state:
+        code.paginationFixed: true
+        repo.paginationCommitted: false
+    then:
+      output:
+        - "diff --git a/project/backend/app/routers/issues.py b/project/backend/app/routers/issues.py"
+        - "--- a/project/backend/app/routers/issues.py"
+        - "+++ b/project/backend/app/routers/issues.py"
+        - "@@ -69,7 +69,7 @@ def list_issues("
+        - "     total = query.count()"
+        - " "
+        - "-    skip = page * page_size"
+        - "+    skip = (page - 1) * page_size"
+        - "     items = query.order_by(models.Issue.created_at.desc()).offset(skip).limit(page_size).all()"
+
+  - id: git-diff-search-stat
+    when:
+      command: [git, diff, HEAD...sandbox-add-search/main]
+    then:
+      output:
+        - " project/backend/app/routers/issues.py | 12 ++++++++++--"
+        - " project/backend/tests/test_issues.py  |  4 ----"
+        - " 2 files changed, 10 insertions(+), 6 deletions(-)"
+
+  - id: git-diff-notif-stat
+    when:
+      command: [git, diff, HEAD...sandbox-add-notif/main]
+    then:
+      output:
+        - " project/backend/app/services/notifications.py | 52 +++++++++++++++++++++-----"
+        - " project/backend/tests/test_notifications.py   | 58 ++++++++++++++++++++++++++++"
+        - " project/backend/app/routers/issues.py         |  4 ++-"
+        - " 3 files changed, 98 insertions(+), 16 deletions(-)"
+
+  - id: git-diff-clean
+    when:
+      command: [git, diff]
+    then:
+      output: []
+
+  - id: git-add
+    when:
+      command: [git, add]
+    then:
+      output: []
+
+  - id: git-commit-pagination
+    completes: commit-fix
+    when:
+      command: [git, commit]
+      state:
+        code.paginationFixed: true
+        repo.paginationCommitted: false
+    then:
+      state: { repo.paginationCommitted: true }
+      output:
+        - "[main a4c91d2] Fix pagination offset in list_issues"
+        - " 1 file changed, 1 insertion(+), 1 deletion(-)"
+
+  - id: git-commit-nothing
+    when:
+      command: [git, commit]
+    then:
+      output:
+        - "On branch main"
+        - "nothing to commit, working tree clean"
+      exit: 1
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 07: fetch, review and merge what the clone-mode agents did
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: git-fetch-fix
+    when:
+      command: [git, fetch, sandbox-fix-bugs]
+      state: { sandboxes.fixBugs: true }
+    then:
+      state: { repo.fixFetched: true }
+      output:
+        - "From sandbox-fix-bugs"
+        - " * [new branch]      main       -> sandbox-fix-bugs/main"
+
+  - id: git-fetch-search
+    when:
+      command: [git, fetch, sandbox-add-search]
+      state: { sandboxes.addSearch: true }
+    then:
+      state: { repo.searchFetched: true }
+      output:
+        - "From sandbox-add-search"
+        - " * [new branch]      main       -> sandbox-add-search/main"
+
+  - id: git-fetch-notif
+    completes: fetch-agents
+    when:
+      command: [git, fetch, sandbox-add-notif]
+      state: { sandboxes.addNotif: true }
+    then:
+      state: { repo.notifFetched: true }
+      output:
+        - "From sandbox-add-notif"
+        - " * [new branch]      main       -> sandbox-add-notif/main"
+
+  - id: git-fetch-missing
+    when:
+      command: [git, fetch]
+    then:
+      stderr:
+        - "fatal: Could not read from remote repository."
+        - ""
+        - "Please make sure you have the correct access rights"
+        - "and the repository exists."
+      exit: 128
+
+  - id: git-log-fix
+    when:
+      command: [git, log, HEAD..sandbox-fix-bugs/main]
+      state:
+        repo.fixFetched: true
+        repo.mergedFix: false
+    then:
+      output: ["c4d5e6f Refresh updated_at on every row update"]
+
+  - id: git-log-search
+    when:
+      command: [git, log, HEAD..sandbox-add-search/main]
+      state:
+        repo.searchFetched: true
+        repo.mergedSearch: false
+    then:
+      output: ["d9e8f7a Implement issue search, un-xfail the search test"]
+
+  - id: git-log-notif
+    when:
+      command: [git, log, HEAD..sandbox-add-notif/main]
+      state:
+        repo.notifFetched: true
+        repo.mergedNotif: false
+    then:
+      output: ["b6a5c4d Send email notifications when an issue's status changes"]
+
+  - id: git-log-none
+    when:
+      command: [git, log]
+    then:
+      output: []
+
+  # `--no-edit` swallows the branch name as its value (see the flag parser).
+  - id: git-merge-blocked
+    when:
+      command: [git, merge]
+      state:
+        code.paginationFixed: true
+        repo.paginationCommitted: false
+    then:
+      stderr:
+        - "error: Your local changes to the following files would be overwritten by merge:"
+        - "        project/backend/app/routers/issues.py"
+        - "Please commit your changes or stash them before you merge."
+        - "Aborting"
+      exit: 1
+
+  - id: git-merge-fix
+    completes: merge-fix
+    when:
+      command: [git, merge]
+      args:
+        --no-edit: "sandbox-fix-bugs/main"
+      state:
+        repo.fixFetched: true
+        repo.mergedFix: false
+    then:
+      files:
+        - replace: "project/backend/app/models.py"
+          find: "updated_at = Column(DateTime, default=utcnow)"
+          with: "updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)"
+      state: { repo.mergedFix: true }
+      output:
+        - "Updating a4c91d2..c4d5e6f"
+        - "Fast-forward"
+        - " project/backend/app/models.py | 4 ++--"
+        - " 1 file changed, 2 insertions(+), 2 deletions(-)"
+
+  - id: git-merge-search
+    when:
+      command: [git, merge]
+      args:
+        --no-edit: "sandbox-add-search/main"
+      state:
+        repo.searchFetched: true
+        repo.mergedSearch: false
+    then:
+      files:
+        - replace: "project/backend/app/routers/issues.py"
+          find: "from sqlalchemy.orm import Session"
+          with: "from sqlalchemy import or_\nfrom sqlalchemy.orm import Session"
+        # The `find` starts after the 4 spaces of indentation already in the file, so the
+        # first line below carries none, and the others carry 4 extra spaces.
+        - replace: "project/backend/app/routers/issues.py"
+          find: 'raise HTTPException(status_code=501, detail="Search not yet implemented")'
+          with: |-
+            results = (
+                    db.query(models.Issue)
+                    .filter(
+                        models.Issue.project_id == project_id,
+                        or_(
+                            models.Issue.title.ilike(f"%{q}%"),
+                            models.Issue.description.ilike(f"%{q}%"),
+                        ),
+                    )
+                    .order_by(models.Issue.updated_at.desc())
+                    .all()
+                )
+                return results
+      state: { repo.mergedSearch: true }
+      output:
+        - "Updating c4d5e6f..d9e8f7a"
+        - "Fast-forward"
+        - " project/backend/app/routers/issues.py | 12 ++++++++++--"
+        - " project/backend/tests/test_issues.py  |  4 ----"
+        - " 2 files changed, 10 insertions(+), 6 deletions(-)"
+
+  - id: git-merge-notif
+    completes: merge-agents
+    when:
+      command: [git, merge]
+      args:
+        --no-edit: "sandbox-add-notif/main"
+      state:
+        repo.notifFetched: true
+        repo.mergedNotif: false
+    then:
+      files:
+        - create: "project/backend/app/services/notifications.py"
+          content: |
+            """Notification service for DevBoard: email the people involved when a status changes."""
+
+            import asyncio
+            import logging
+            import os
+            import smtplib
+            from email.message import EmailMessage
+            from typing import Optional
+
+            logger = logging.getLogger(__name__)
+
+
+            def _send(host: str, port: int, user: str, password: str, message: EmailMessage) -> None:
+                with smtplib.SMTP(host, port) as smtp:
+                    smtp.starttls()
+                    smtp.login(user, password)
+                    smtp.send_message(message)
+
+
+            async def send_status_change_notification(
+                issue_id: int,
+                issue_title: str,
+                old_status: str,
+                new_status: str,
+                assignee_email: Optional[str] = None,
+                reporter_email: Optional[str] = None,
+                project_id: Optional[int] = None,
+            ) -> None:
+                host = os.getenv("SMTP_HOST")
+                user = os.getenv("SMTP_USER")
+                password = os.getenv("SMTP_PASS")
+                if not (host and user and password):
+                    logger.warning("SMTP is not configured: skipping the notification for issue #%d", issue_id)
+                    return
+
+                recipients = {email for email in (reporter_email, assignee_email) if email}
+                if not recipients:
+                    return
+
+                frontend = os.getenv("FRONTEND_URL", "http://localhost:3000")
+                message = EmailMessage()
+                message["Subject"] = f"[DevBoard] Issue #{issue_id} moved to {new_status}"
+                message["From"] = user
+                message["To"] = ", ".join(sorted(recipients))
+                message.set_content(
+                    f"'{issue_title}' moved from {old_status} to {new_status}.\n"
+                    f"{frontend}/projects/{project_id}\n"
+                )
+                try:
+                    port = int(os.getenv("SMTP_PORT", "587"))
+                    await asyncio.to_thread(_send, host, port, user, password, message)
+                except Exception:
+                    logger.exception("Could not send the notification for issue #%d", issue_id)
+        - create: "project/backend/tests/test_notifications.py"
+          content: |
+            import asyncio
+            from unittest.mock import MagicMock, patch
+
+            from app.services.notifications import send_status_change_notification
+
+
+            def _run(**kwargs):
+                return asyncio.run(
+                    send_status_change_notification(1, "Login page crashes", "open", "done", **kwargs)
+                )
+
+
+            def test_sends_email_to_reporter_and_assignee(monkeypatch):
+                for key, value in {"SMTP_HOST": "smtp.test", "SMTP_USER": "bot", "SMTP_PASS": "pw"}.items():
+                    monkeypatch.setenv(key, value)
+                with patch("smtplib.SMTP") as smtp:
+                    _run(assignee_email="a@example.com", reporter_email="r@example.com", project_id=7)
+                smtp.return_value.__enter__.return_value.send_message.assert_called_once()
+
+
+            def test_nothing_is_sent_without_smtp_configuration(monkeypatch):
+                monkeypatch.delenv("SMTP_HOST", raising=False)
+                with patch("smtplib.SMTP") as smtp:
+                    _run(reporter_email="r@example.com")
+                smtp.assert_not_called()
+
+
+            def test_smtp_failure_does_not_break_the_call(monkeypatch):
+                for key, value in {"SMTP_HOST": "smtp.test", "SMTP_USER": "bot", "SMTP_PASS": "pw"}.items():
+                    monkeypatch.setenv(key, value)
+                with patch("smtplib.SMTP", side_effect=OSError("boom")):
+                    _run(reporter_email="r@example.com")
+      state: { repo.mergedNotif: true }
+      output:
+        - "Merge made by the 'ort' strategy."
+        - " project/backend/app/services/notifications.py | 52 +++++++++++++++++++++-----"
+        - " project/backend/tests/test_notifications.py   | 58 ++++++++++++++++++++++++++++"
+        - " project/backend/app/routers/issues.py         |  4 ++-"
+        - " 3 files changed, 98 insertions(+), 16 deletions(-)"
+
+  - id: git-merge-uptodate
+    when:
+      command: [git, merge]
+    then:
+      output: ["Already up to date."]
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 08: Docker inside the sandbox
+  # `!docker ps` inside the agent session (Terminal 1) sees the sandbox's private
+  # daemon. A plain `docker ps` in any other terminal is your host's Docker.
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: docker-ps-in-sandbox
+    completes: list-containers
+    when:
+      command: [docker, ps]
+      terminal: t1
+      state: { stack.up: true }
+    then:
+      output:
+        - "CONTAINER ID   IMAGE                COMMAND                  CREATED         STATUS                   PORTS                                         NAMES"
+        - "a74c644a575f   project-frontend     \"docker-entrypoint.s…\"   2 minutes ago   Up 2 minutes             0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp   project-frontend-1"
+        - "046609163f75   project-backend      \"uvicorn app.main:ap…\"   2 minutes ago   Up 2 minutes (healthy)   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp   project-backend-1"
+        - "f8c2988853b3   postgres:16-alpine   \"docker-entrypoint.s…\"   2 minutes ago   Up 2 minutes (healthy)   5432/tcp                                      project-db-1"
+
+  - id: docker-ps-host
+    when:
+      command: [docker, ps]
+    then:
+      output:
+        - "CONTAINER ID   IMAGE   COMMAND   CREATED   STATUS   PORTS   NAMES"
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 09: port forwarding
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: ports-publish-api
+    completes: publish-api
+    when:
+      command: [sbx, ports, quickstart]
+      args:
+        --publish: "8000:8000"
+      state: { sandboxes.quickstart: true }
+    then:
+      state: { ports.api: true }
+      output: ["Published 127.0.0.1:8000 -> 8000/tcp4"]
+
+  - id: ports-publish-web
+    completes: publish-frontend
+    when:
+      command: [sbx, ports, quickstart]
+      args:
+        --publish: "3001:3000"
+      state: { sandboxes.quickstart: true }
+    then:
+      state: { ports.web: true }
+      output: ["Published 127.0.0.1:3001 -> 3000/tcp4"]
+
+  - id: ports-unpublish-api
+    when:
+      command: [sbx, ports, quickstart]
+      args:
+        --unpublish: "8000:8000"
+    then:
+      state: { ports.api: false }
+      output: ["Unpublished 127.0.0.1:8000"]
+
+  - id: ports-ls-both
+    completes: list-ports
+    when:
+      command: [sbx, ports, quickstart]
+      args:
+        --publish: false
+        --unpublish: false
+      state:
+        ports.api: true
+        ports.web: true
+    then:
+      output:
+        - "HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL"
+        - "127.0.0.1   3001        3000           tcp4"
+        - "127.0.0.1   8000        8000           tcp4"
+
+  - id: ports-ls-api
+    completes: list-ports
+    when:
+      command: [sbx, ports, quickstart]
+      args:
+        --publish: false
+        --unpublish: false
+      state: { ports.api: true }
+    then:
+      output:
+        - "HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL"
+        - "127.0.0.1   8000        8000           tcp4"
+
+  - id: ports-ls-web
+    completes: list-ports
+    when:
+      command: [sbx, ports, quickstart]
+      args:
+        --publish: false
+        --unpublish: false
+      state: { ports.web: true }
+    then:
+      output:
+        - "HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL"
+        - "127.0.0.1   3001        3000           tcp4"
+
+  - id: ports-ls-none
+    when:
+      command: [sbx, ports, quickstart]
+    then:
+      output: ["No published ports"]
+
+  # A port declared by a kit is published at sbx create, on a host port sbx picks.
+  - id: ports-ls-demo
+    when:
+      command: [sbx, ports, ports-demo]
+      state: { sandboxes.portsDemo: true }
+    then:
+      output:
+        - "HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL"
+        - "127.0.0.1   60020       8000           tcp4"
+
+  # `curl` stands in for your browser: the simulation can't open localhost pages.
+  - id: curl-api-health
+    completes: reach-app
+    when:
+      command: [curl]
+      args:
+        0: "http://localhost:8000/health"
+      state:
+        ports.api: true
+        stack.up: true
+    then:
+      output: ['{"status":"ok"}']
+
+  - id: curl-api-docs
+    completes: reach-app
+    when:
+      command: [curl]
+      args:
+        0: "http://localhost:8000/docs"
+      state:
+        ports.api: true
+        stack.up: true
+    then:
+      output:
+        - "<!DOCTYPE html>"
+        - "<html>"
+        - "<head>"
+        - "<title>DevBoard API - Swagger UI</title>"
+        - "..."
+
+  - id: curl-frontend
+    completes: reach-app
+    when:
+      command: [curl]
+      args:
+        0: "http://localhost:3001"
+      state:
+        ports.web: true
+        stack.up: true
+    then:
+      output:
+        - "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>"
+        - "<title>DevBoard</title>"
+        - "..."
+
+  - id: curl-demo-listing
+    completes: kit-port
+    when:
+      command: [curl]
+      args:
+        0: { oneOf: ["http://127.0.0.1:60020/", "http://127.0.0.1:60020", "http://localhost:60020/"] }
+      state: { ports.demoServer: true }
+    then:
+      output:
+        - "<!DOCTYPE HTML>"
+        - "<html lang=\"en\">"
+        - "<head><title>Directory listing for /</title></head>"
+        - "<body>"
+        - "<h1>Directory listing for /</h1>"
+        - "<ul>"
+        - "<li><a href=\"AGENTS.md\">AGENTS.md</a></li>"
+        - "<li><a href=\"README.md\">README.md</a></li>"
+        - "<li><a href=\"backend/\">backend/</a></li>"
+        - "<li><a href=\"docker-compose.yml\">docker-compose.yml</a></li>"
+        - "<li><a href=\"frontend/\">frontend/</a></li>"
+        - "<li><a href=\"kits/\">kits/</a></li>"
+        - "<li><a href=\"prompts/\">prompts/</a></li>"
+        - "</ul>"
+        - "</body>"
+        - "</html>"
+
+  - id: curl-refused
+    when:
+      command: [curl]
+      args:
+        0: { any: true }
+    then:
+      stderr:
+        - "curl: (7) Failed to connect to {{ args.0 }}: Couldn't connect to server"
+        - "Nothing is published there, or the service isn't running: see sbx ports and sbx ls."
+      exit: 7
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 10: MCP servers
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: mcp-add-dhi
+    completes: register-dhi
+    when:
+      command: [sbx, mcp, add, dhi]
+    then:
+      state: { mcp.registered: true }
+      output:
+        - "Opening your browser to authorize the server with your Docker account..."
+        - { text: "✓ Registered MCP server 'dhi' (remote http, https://dhi.io/mcp)", delay: medium }
+
+  - id: mcp-ls-registered
+    when:
+      command: [sbx, mcp, ls]
+      state: { mcp.registered: true }
+    then:
+      output:
+        - "NAME   TRANSPORT     STATUS   GATEWAY                 DETAIL"
+        - "dhi    remote http   ready    LOCAL, managed by you"
+
+  - id: mcp-ls-empty
+    when:
+      command: [sbx, mcp, ls]
+    then:
+      output: ["No MCP servers registered."]
+
+  - id: mcp-rm-dhi
+    completes: remove-mcp
+    when:
+      command: [sbx, mcp, rm, dhi]
+    then:
+      state: { mcp.registered: false }
+      output: ["✓ Removed MCP server 'dhi'"]
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Module 11: wrap up
+  # `--force` swallows the name that follows it, so `sbx rm --force ports-demo`
+  # arrives with no positional argument (see the flag parser).
+  # ════════════════════════════════════════════════════════════════════════
+
+  - id: rm-lab-sandboxes
+    completes: remove-sandboxes
+    when:
+      command: [sbx, rm]
+      args:
+        0: "quickstart"
+        4: "mcp"
+    then:
+      state:
+        sandboxes.quickstart: false
+        sandboxes.fixBugs: false
+        sandboxes.addSearch: false
+        sandboxes.addNotif: false
+        sandboxes.mcp: false
+        stack.up: false
+        ports.api: false
+        ports.web: false
+      output:
+        - "✓ Removed sandbox 'quickstart' (its images, containers and PostgreSQL data too)"
+        - "✓ Removed sandbox 'fix-bugs' (fetched branches stay under refs/sandboxes/fix-bugs/*)"
+        - "✓ Removed sandbox 'add-search' (fetched branches stay under refs/sandboxes/add-search/*)"
+        - "✓ Removed sandbox 'add-notif' (fetched branches stay under refs/sandboxes/add-notif/*)"
+        - "✓ Removed sandbox 'mcp'"
+
+  - id: rm-quickstart
+    when:
+      command: [sbx, rm]
+      args:
+        0: "quickstart"
+    then:
+      state:
+        sandboxes.quickstart: false
+        stack.up: false
+        ports.api: false
+        ports.web: false
+      output: ["✓ Removed sandbox 'quickstart'"]
+
+  - id: rm-shell-demo
+    completes: remove-shell-demo
+    when:
+      command: [sbx, rm]
+      args:
+        0: "shell-demo"
+    then:
+      state: { sandboxes.shellDemo: false }
+      output: ["✓ Removed sandbox 'shell-demo'"]
+
+  - id: rm-ports-demo
+    when:
+      command: [sbx, rm]
+      args:
+        --force: "ports-demo"
+    then:
+      state:
+        sandboxes.portsDemo: false
+        ports.demoServer: false
+      output: ["✓ Removed sandbox 'ports-demo'"]
+
+  - id: rm-any
+    when:
+      command: [sbx, rm]
+      args:
+        0: { any: true }
+    then:
+      output: ["✓ Removed sandbox '{{ args.0 }}'"]
+
+  - id: secret-rm-github
+    completes: remove-github-secret
+    when:
+      command: [sbx, secret, rm, github]
+    then:
+      state: { secrets.github: false }
+      output: ["✓ Removed secret 'github'"]
+
+  - id: secret-rm-copilot
+    completes: remove-copilot-secret
+    when:
+      command: [sbx, secret, rm, copilot]
+    then:
+      state: { secrets.copilot: false }
+      output: ["✓ Removed secret 'copilot'"]

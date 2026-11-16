@@ -1,0 +1,138 @@
+# Kits
+
+Every agent you run in this lab comes from a **kit**. A kit is a declarative YAML artifact, published to a registry like an image, that describes an agent's sandbox: which image runs, how the agent starts, and what it is given (credentials, network policies, environment variables, startup commands and files).
+
+Because all of that lives in one versioned artifact, the agent's environment, and the authority it gets, is reproducible and reviewable: a change in what an agent is allowed to do shows up as a change in its kit.
+
+There are two kinds of kits:
+
+| Kind | What it does | Example |
+|------|--------------|---------|
+| Agent kit (`kind: sandbox`) | Defines the agent: its image, entrypoint, default arguments, and what it needs | `sbx/copilot`, `sbx/claude` |
+| Mixin | Extends an agent kit with a tool, a credential, a network rule, a file… | Added with `sbx create <agent> --kit <reference>` |
+
+```mermaid
+graph LR
+    subgraph Kits["Kits, written in YAML"]
+        direction TB
+        AgentKit["Agent kit: sbx/copilot<br/>image, entrypoint, --yolo"]
+        PythonMixin["Mixin: kits/python<br/>install step, network rules"]
+        TrivyMixin["Mixin: kits/trivy<br/>files built ahead, network rules"]
+    end
+
+    Create["sbx create --kit"]
+
+    subgraph Sandbox["Agent's sandbox"]
+        direction TB
+        Copilot["Copilot CLI"]
+        Python["Python 3, venv, pip"]
+        Trivy["trivy, scan-images"]
+    end
+
+    KitPolicy["Kit policy<br/>for this sandbox only"]
+
+    AgentKit -->|defines the agent| Create
+    PythonMixin -->|adds to it| Create
+    TrivyMixin -->|adds to it| Create
+    Create -->|starts| Copilot
+    Create -->|installs| Python
+    Create -->|lays its files over the image| Trivy
+    Create -->|adds| KitPolicy
+
+    style Kits fill:#f8fbff,stroke:#9fc5e8,color:#00084D
+    style Sandbox fill:#f0faf4,stroke:#86c5a0,color:#00084D
+    style AgentKit fill:#fff,stroke:#0DB7ED,color:#384D54
+    style PythonMixin fill:#fff,stroke:#0DB7ED,color:#384D54
+    style TrivyMixin fill:#fff,stroke:#0DB7ED,color:#384D54
+    style KitPolicy fill:#fff,stroke:#0DB7ED,color:#384D54
+    style Create fill:#E5F2FC,stroke:#1D63ED,color:#00084D
+    style Copilot fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style Python fill:#e0f2e6,stroke:#6db88a,color:#384D54
+    style Trivy fill:#e0f2e6,stroke:#6db88a,color:#384D54
+```
+
+## Inspect the Copilot kit
+
+Show a summary of the kit that `sbx run copilot` uses:
+
+```bash
+sbx kit inspect sbx/copilot
+```
+
+Then the kit's declaration itself:
+
+```bash
+sbx kit inspect sbx/copilot --format yaml
+```
+
+It's a small file, and it tells you a lot about the sandboxes you'll use in this lab:
+
+| In the kit | What it means | Where you'll see it |
+|------------|---------------|---------------------|
+| `sandbox.image`, pinned by digest, built from Docker Hardened Images | The sandbox's image: a minimal Debian image with the `agent` user and Docker, but no Python | *Agent sandbox*: you add Python with the kit below |
+| `entrypoint: copilot` | `sbx run` starts the Copilot CLI | *Agent sandbox* |
+| `command.default: --yolo` | Copilot runs without asking for confirmations; arguments you pass after `--` are added to it | *Agent sandbox*, *Clone mode and parallel agents* |
+| No policies (`Policies: none`) | The descriptor declares no network rules. `sbx` still allows Copilot's own core hosts for each Copilot sandbox, on top of the rules you added | *Agent sandbox*, with `sbx policy ls` |
+
+## Compare with another agent kit
+
+Kits describe every agent the same way. Inspect the Claude Code kit:
+
+```bash
+sbx kit inspect sbx/claude
+```
+
+It uses more of the format than the Copilot kit:
+
+- **Arguments** (`model`, `reasoningEffort`): settings you can choose when you create a sandbox, with `--kit-arg model=...`.
+- **Environment variables** (`Policies: Environment: 2 variables`), set inside the sandbox.
+- An **AI file** (`/home/agent/.claude/CLAUDE.md`), where context for the agent is placed.
+
+## Build your own kit
+
+Writing a kit is mostly writing YAML. The DevBoard project includes a small mixin that adds Python to an agent's sandbox, so your agent doesn't have to install it by hand. Read it:
+
+:filelink[project/kits/python/python.yaml]{path="project/kits/python/python.yaml"}
+
+It declares two capabilities: a **lifecycle** hook that runs once when the sandbox is created, and a **network policy** that opens only the hosts this kit needs. For the install, that's the sandbox image's apt repositories, `deb.debian.org` and `dhi.io`, because `apt-get update` reads every configured source. At runtime, it's PyPI for `pip`. No Dockerfile is needed for this one.
+
+> **Note:** the `install` and `runtime` lists say when each host is needed. With `sbx` v0.53.0, though, the hosts listed under `install` **stay allowed after the install** too. Count both lists as hosts the sandbox can reach.
+
+Check that the kit is valid:
+
+```bash
+sbx kit validate ./project/kits/python
+```
+
+See what it declares:
+
+```bash
+sbx kit inspect ./project/kits/python
+```
+
+You'll use this kit to create the sandboxes your agents work in.
+
+To share a kit, publish it in a Git repository or an OCI registry (`sbx kit push`). Remote kits are only installed from trusted publishers: `sbx` checks each reference against the `kit.allowedSources` setting.
+
+## A kit with its own image: Trivy
+
+The Python kit installs its tool when the sandbox is created, so its network policy must open the Debian hosts during that install. A kit can also bring a Dockerfile and install its tools **when the kit itself is built**, on your machine, before any sandbox exists. The project includes a second mixin made that way, adapted from Docker's [trivy-mixin kit](https://github.com/docker/sbx-kits-contrib/tree/v3/trivy-mixin). It adds [Trivy](https://trivy.dev/), Aqua's open source vulnerability scanner, to an agent's sandbox:
+
+:filelink[project/kits/trivy/trivy.yaml]{path="project/kits/trivy/trivy.yaml"}
+
+The first three hosts serve Trivy's vulnerability database. The GitHub hosts serve VEX statements, which mark the CVEs that don't affect an image, including those published for Docker Hardened Images. Next to it, `trivy.dockerfile` builds the kit's image in two stages: the first downloads Trivy 0.70.0 and checks the download against the SHA256 published for each architecture; the second starts from an empty image (`scratch`) and keeps only the files the mixin adds. When you add the mixin to an agent, `sbx` lays these files over the agent's image.
+
+| | Python kit | Trivy kit |
+|---|---|---|
+| Installs its tool | When the sandbox is created (`lifecycle` hook running `apt-get`) | When the kit is built (`trivy.dockerfile`), pinned by version and SHA256 |
+| Adds to the sandbox | Packages, installed inside each new sandbox | A layer of files, laid over the agent's image |
+| Network policy | Debian hosts for the install, PyPI at runtime | Trivy's vulnerability database and the VEX statements, at runtime only |
+
+Why put a scanner in a sandbox? It reads all your code, and it's a supply-chain target like any other tool: Trivy's own releases were compromised in March 2026. In a sandbox, it sees the workspace but not your `~/.ssh` or `~/.docker/config.json`, and it can reach its database, the VEX statements and the hosts you allowed, nothing else. You add this kit to an agent's sandbox in the *MCP servers* module.
+
+## Two more ways to package it
+
+You don't need to run these, and the rest of the lab doesn't use them. They're here so you know they exist; the [full lab](https://github.com/mathieu-benoit/sbx-lab/blob/main/instructions/02-kits.md) shows both in detail.
+
+- **A kit set** (Early Access) packages a combination of kits, such as Copilot + Python + Trivy, as a single kit, so your team runs one reference.
+- **An environment file** (`sbxenv.yaml`, experimental) describes a whole sandbox: the agent and its kits, the workspace, the secrets, the published ports, MCP servers. Commit it with the project and every contributor gets the same sandbox. This very repository uses one: `sbx env run` starts the sandbox for authoring these simulated labs.
