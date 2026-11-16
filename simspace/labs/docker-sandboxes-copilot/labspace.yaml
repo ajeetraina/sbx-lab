@@ -1,0 +1,725 @@
+title: "Docker Sandboxes with GitHub Copilot (Simulated)"
+description: "Lock down an agent's network, build kits, keep credentials out of reach, run agents in parallel and give them tools, all in your browser."
+
+# Catalog card metadata. It's only shown on the landing page when this repo has
+# two or more entries (a single lab is entered directly). labs.json is
+# GENERATED from this block, so you never write it by hand.
+catalog:
+  icon: deployed_code
+  tags: ["docker sandboxes", "sbx", "ai agents", "github copilot"]
+  estimatedMinutes: 60
+
+# Bump this whenever you add, remove or rename steps: stored progress is
+# namespaced per version, so stale completion records are cleared.
+version: "1.0.0"
+
+# Command behaviour lives in simulator.yaml (relative to this file).
+simulator: simulator.yaml
+
+# The original lab uses several terminals on the host: one per agent, one to
+# review and merge their work, one for the dashboard. All four tabs share one
+# simulated machine (state and filesystem), like four shells on the same laptop.
+# Use Terminal 1 until the "Clone mode and parallel agents" module.
+terminals:
+  - id: t1
+    title: Terminal 1
+    icon: terminal
+  - id: t2
+    title: Terminal 2
+    icon: terminal
+  - id: t3
+    title: Terminal 3
+    icon: terminal
+  - id: t4
+    title: Terminal 4
+    icon: terminal
+
+sections:
+  - title: Welcome
+    contentPath: welcome.md
+
+  - title: Prerequisites
+    contentPath: 00-prerequisites.md
+    steps:
+      - id: check-sbx
+        title: "Check that sbx is installed"
+      - id: sign-in
+        title: "Sign in to Docker"
+      - id: run-diagnose
+        title: "Run sbx diagnose"
+      - id: check-policies
+        title: "Check that your policies are local"
+      - id: warm-up
+        title: "Warm up the sandbox images"
+
+  - title: Network policies
+    contentPath: 01-network-policies.md
+    steps:
+      - id: reset-policy
+        title: "Switch to the Locked Down policy"
+      - id: check-denied
+        title: "Check that docker.com is denied"
+      - id: shell-blocked
+        title: "See the proxy block a request from a sandbox"
+      - id: allow-host
+        title: "Allow a host"
+      - id: shell-allowed
+        title: "Reach the allowed host from the sandbox"
+      - id: remove-rules
+        title: "Remove a custom rule"
+      - id: allow-github
+        title: "Allow GitHub and Copilot"
+      - id: allow-python
+        title: "Allow Debian and PyPI"
+      - id: allow-docker-hub
+        title: "Allow Docker Hub"
+      - id: allow-npm
+        title: "Allow npm"
+      - id: verify-rules
+        title: "List the lab's policy"
+
+  - title: Kits
+    contentPath: 02-kits.md
+    steps:
+      - id: inspect-copilot-kit
+        title: "Inspect the Copilot kit"
+      - id: compare-claude-kit
+        title: "Compare with the Claude Code kit"
+      - id: validate-python-kit
+        title: "Validate the Python kit"
+      - id: inspect-python-kit
+        title: "Inspect the Python kit"
+
+  - title: Secrets and credentials
+    contentPath: 03-secrets-credentials.md
+    steps:
+      - id: store-github-secret
+        title: "Store the github secret"
+      - id: store-copilot-secret
+        title: "Store the copilot secret"
+      - id: list-secrets
+        title: "Check that both secrets are stored"
+
+  - title: Agent sandbox
+    contentPath: 04-first-sandbox.md
+    steps:
+      - id: create-sandbox
+        title: "Create the quickstart sandbox"
+      - id: check-python
+        title: "Check that Python came with the kit"
+      - id: check-token
+        title: "Check that your token isn't in the sandbox"
+      - id: check-workspace
+        title: "Check what the agent can see of your disk"
+      - id: block-upload
+        title: "See an upload to a paste site blocked"
+      - id: meet-agent
+        title: "Meet your agent"
+
+  - title: TUI dashboard
+    contentPath: 05-tui-dashboard.md
+    steps:
+      - id: open-dashboard
+        title: "Open the TUI dashboard"
+
+  - title: Run in direct mode
+    contentPath: 06-run-in-direct-mode.md
+    steps:
+      - id: run-tests
+        title: "Have the agent run the tests"
+      - id: fix-pagination
+        title: "Have the agent fix the pagination bug"
+      - id: confirm-fix
+        title: "Confirm that the pagination tests pass"
+      - id: commit-fix
+        title: "Review and commit the fix"
+
+  - title: Clone mode and parallel agents
+    contentPath: 07-parallel-agents.md
+    steps:
+      - id: fix-in-clone
+        title: "Fix a bug in a private clone"
+      - id: merge-fix
+        title: "Fetch and merge the clone's commit"
+      - id: start-search-agent
+        title: "Start the search agent"
+      - id: start-notif-agent
+        title: "Start the notifications agent"
+      - id: fetch-agents
+        title: "Fetch both agents' work"
+      - id: merge-agents
+        title: "Merge both agents' branches"
+      - id: verify-merged
+        title: "Run the full suite on the merged result"
+
+  - title: Docker inside the sandbox
+    contentPath: 08-docker-inside-the-sandbox.md
+    steps:
+      - id: start-stack
+        title: "Have the agent start the stack with Compose"
+      - id: list-containers
+        title: "List the containers inside the sandbox"
+
+  - title: Port forwarding
+    contentPath: 09-port-forwarding.md
+    steps:
+      - id: publish-api
+        title: "Publish the API port"
+      - id: publish-frontend
+        title: "Publish the frontend on another port"
+      - id: reach-app
+        title: "Reach the app from your host"
+      - id: list-ports
+        title: "List the published ports"
+      - id: kit-port
+        title: "Publish a port from a kit"
+
+  - title: MCP servers
+    contentPath: 10-mcp-servers.md
+    steps:
+      - id: register-dhi
+        title: "Register the DHI MCP server"
+      - id: create-mcp-sandbox
+        title: "Create a sandbox with the DHI server and the Trivy kit"
+      - id: ask-dhi
+        title: "Ask the agent for hardened images"
+      - id: read-mcp-log
+        title: "Check that no network rule was needed"
+      - id: scan-images
+        title: "Scan the images with Trivy"
+      - id: read-scan-log
+        title: "See which hosts the scanner reached"
+
+  - title: Wrap up
+    contentPath: 11-wrap-up.md
+    steps:
+      - id: remove-sandboxes
+        title: "Remove the lab's sandboxes"
+      - id: remove-shell-demo
+        title: "Remove the shell-demo sandbox"
+      - id: remove-mcp
+        title: "Remove the DHI MCP registration"
+      - id: remove-github-secret
+        title: "Remove the github secret"
+      - id: remove-copilot-secret
+        title: "Remove the copilot secret"
+
+  - title: Troubleshooting
+    contentPath: troubleshooting.md
+
+# Seed files for the virtual filesystem: the real DevBoard files the lab touches,
+# copied from ../../../project. The scenarios edit them (the pagination fix, the
+# merged agent work), so `cat` shows the result.
+files:
+  project/kits/python/python.yaml: |
+    # syntax=docker/sandbox-kit:3
+    schemaVersion: "3"
+    kind: mixin
+    displayName: Python
+    description: Python 3 with venv and pip, installed when the sandbox is created
+
+    capabilities:
+      # Install Python once, as root, when the sandbox is created.
+      - type: com.docker.sandbox/lifecycle@1
+        config:
+          install:
+            - description: Install Python 3, venv and pip
+              user: "0"
+              command: apt-get update && apt-get install -y --no-install-recommends python3 python3-venv python3-pip
+
+      # Only the hosts this kit needs. For the install: the sandbox image's apt
+      # repositories (Debian and Docker Hardened Images), which apt-get update reads.
+      # At runtime: PyPI, for pip. (With sbx v0.53.0, the install hosts also stay
+      # allowed once the sandbox runs.)
+      - type: com.docker.sandbox/network-policy@1
+        config:
+          install:
+            allow: [deb.debian.org, dhi.io]
+          runtime:
+            allow: [pypi.org, files.pythonhosted.org]
+  project/kits/api-port/api-port.yaml: |
+    # syntax=docker/sandbox-kit:3
+    schemaVersion: "3"
+    kind: mixin
+    displayName: DevBoard API port
+    description: Publishes the sandbox's port 8000, where the DevBoard API listens, to the host
+
+    capabilities:
+      # Ask for the sandbox port only: sbx picks a free host port on 127.0.0.1.
+      - type: com.docker.sandbox/port@1
+        config:
+          container: 8000
+  project/kits/trivy/trivy.yaml: |
+    # syntax=docker/sandbox-kit:3
+    # Adapted from the trivy-mixin kit of docker/sbx-kits-contrib (v3 branch, Apache-2.0):
+    # https://github.com/docker/sbx-kits-contrib/tree/v3/trivy-mixin
+    # Changes: shorter comments, no agent-context capability, VEX repositories for
+    # Docker Hardened Images, and a scan-images script.
+    schemaVersion: "3"
+    kind: mixin
+    displayName: Trivy
+    description: Aqua's open source vulnerability scanner, added to an agent's sandbox
+    sourceUrl: https://github.com/aquasecurity/trivy
+
+    # What this kit installs. Keep in step with TRIVY_VERSION in trivy.dockerfile.
+    provides: ["trivy@0.70.0"]
+
+    capabilities:
+      # Trivy is installed when the kit is built (see trivy.dockerfile), so the
+      # sandbox never downloads it. At runtime it reaches the vulnerability
+      # database (mirror.gcr.io first, ghcr.io as the fallback, and GHCR's blob
+      # storage), and the GitHub hosts that serve the VEX repositories listed in
+      # vex-repository.yaml.
+      - type: com.docker.sandbox/network-policy@1
+        config:
+          runtime:
+            allow:
+              - mirror.gcr.io
+              - ghcr.io
+              - pkg-containers.githubusercontent.com
+              - github.com
+              - api.github.com
+              - codeload.github.com
+              - raw.githubusercontent.com
+  project/prompts/implement-search.txt: |
+    Implement the issue search endpoint in project/backend/app/routers/issues.py.
+
+    The endpoint is GET /projects/{project_id}/issues/search?q= and currently returns 501.
+    It should:
+    - Require a query string parameter `q`
+    - Return the issues of that project whose title OR description contains `q`,
+      using case-insensitive matching
+    - Return a list of issues using the schema already declared on the route
+      (List[schemas.IssueOut])
+    - Keep the existing project ownership check
+    - Order the results with the most recently updated issues first
+
+    Steps:
+    1. Set up the Python environment (see AGENTS.md)
+    2. Read the existing list_issues() implementation for reference
+    3. Implement the search with SQLAlchemy, for example:
+       or_(Issue.title.ilike(f"%{q}%"), Issue.description.ilike(f"%{q}%"))
+    4. In project/backend/tests/test_issues.py, remove the xfail marker from
+       test_search_finds_matching_issues so it runs as a regular test
+    5. Run the tests: cd project/backend && ~/venv/bin/pytest tests/ -v
+       The search test must pass. If other tests fail, they are unrelated to search:
+       do not change them, just report them.
+    6. Keep your changes limited to what search needs, then commit with a descriptive message
+  project/prompts/implement-notifications.txt: |
+    Implement email notifications in project/backend/app/services/notifications.py.
+
+    The coroutine send_status_change_notification() is currently a stub that only logs.
+    It should:
+    - Send an email to the issue reporter, and to the assignee when there is one and it
+      differs from the reporter, whenever an issue's status changes
+    - Use the smtplib standard library (no new dependencies); since smtplib is blocking,
+      run it with asyncio.to_thread so the event loop is not blocked
+    - Read the SMTP configuration from the environment variables SMTP_HOST, SMTP_PORT,
+      SMTP_USER and SMTP_PASS (SMTP_PORT defaults to 587)
+    - Gracefully handle missing configuration: log a warning and return instead of crashing
+    - Never let an SMTP failure break the API call: catch the error and log it
+    - Include the issue title, the old status, the new status and a link in the email body.
+      Build the link from the FRONTEND_URL environment variable (default
+      http://localhost:3000) plus /projects/<project_id>. You may add an optional
+      project_id parameter and pass it from update_issue() in project/backend/app/routers/issues.py.
+
+    Steps:
+    1. Set up the Python environment (see AGENTS.md), then read the existing stub and its caller,
+       update_issue() in project/backend/app/routers/issues.py
+    2. Implement the function
+    3. Add unit tests in a NEW file, project/backend/tests/test_notifications.py (do not edit
+       existing test files). Mock smtplib.SMTP and confirm that send_message is called, and
+       that nothing is sent (and nothing crashes) when the SMTP configuration is missing.
+       pytest-asyncio is not installed: run the coroutine with asyncio.run().
+    4. Run the tests: cd project/backend && ~/venv/bin/pytest tests/ -v
+       Your new tests must pass. If other tests fail, they are unrelated to notifications:
+       do not change them, just report them.
+    5. Keep your changes limited to what notifications need, then commit with a descriptive message
+  project/backend/.env.example: |
+    DATABASE_URL=postgresql+psycopg://devboard:devboard@db:5432/devboard
+    SECRET_KEY=change-me-in-production-use-a-long-random-string
+    ALGORITHM=HS256
+    ACCESS_TOKEN_EXPIRE_MINUTES=60
+  project/backend/app/routers/issues.py: |
+    from typing import List, Optional
+
+    from fastapi import APIRouter, Depends, HTTPException, Query
+    from sqlalchemy.orm import Session
+
+    from app import models, schemas
+    from app.auth import get_current_user
+    from app.database import get_db
+    from app.services.notifications import send_status_change_notification
+
+    router = APIRouter(prefix="/projects/{project_id}/issues", tags=["issues"])
+
+
+    def _get_project_or_404(project_id: int, db: Session, user_id: int) -> models.Project:
+        project = db.query(models.Project).filter(models.Project.id == project_id).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        if project.owner_id != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        return project
+
+
+    # ── Create ────────────────────────────────────────────────────────────────────
+
+
+    @router.post("/", response_model=schemas.IssueOut, status_code=201)
+    def create_issue(
+        project_id: int,
+        issue_in: schemas.IssueCreate,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user),
+    ):
+        _get_project_or_404(project_id, db, current_user.id)
+        issue = models.Issue(
+            title=issue_in.title,
+            description=issue_in.description,
+            priority=issue_in.priority,
+            project_id=project_id,
+            reporter_id=current_user.id,
+            assignee_id=issue_in.assignee_id,
+        )
+        db.add(issue)
+        db.commit()
+        db.refresh(issue)
+        return issue
+
+
+    # ── List (paginated) ──────────────────────────────────────────────────────────
+
+
+    @router.get("/", response_model=schemas.PaginatedIssues)
+    def list_issues(
+        project_id: int,
+        page: int = Query(1, ge=1),
+        page_size: int = Query(20, ge=1, le=100),
+        status: Optional[str] = None,
+        priority: Optional[str] = None,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user),
+    ):
+        _get_project_or_404(project_id, db, current_user.id)
+
+        query = db.query(models.Issue).filter(models.Issue.project_id == project_id)
+
+        if status:
+            query = query.filter(models.Issue.status == status)
+        if priority:
+            query = query.filter(models.Issue.priority == priority)
+
+        total = query.count()
+
+        skip = page * page_size
+        items = query.order_by(models.Issue.created_at.desc()).offset(skip).limit(page_size).all()
+
+        return schemas.PaginatedIssues(total=total, page=page, page_size=page_size, items=items)
+
+
+    # ── Search ────────────────────────────────────────────────────────────────────
+
+
+    @router.get("/search", response_model=List[schemas.IssueOut])
+    def search_issues(
+        project_id: int,
+        q: str = Query(..., min_length=1, description="Search query"),
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user),
+    ):
+        """
+        TODO: Implement full-text search across issue title and description.
+
+        The query parameter `q` should match issues where the title OR description
+        contains the search string (case-insensitive). Consider also supporting
+        ordering results by relevance.
+
+        For now, returns 501 Not Implemented.
+        """
+        _get_project_or_404(project_id, db, current_user.id)
+
+        # TODO: replace with real search logic, e.g.:
+        # results = (
+        #     db.query(models.Issue)
+        #     .filter(
+        #         models.Issue.project_id == project_id,
+        #         or_(
+        #             models.Issue.title.ilike(f"%{q}%"),
+        #             models.Issue.description.ilike(f"%{q}%"),
+        #         ),
+        #     )
+        #     .order_by(models.Issue.updated_at.desc())
+        #     .all()
+        # )
+        # return results
+
+        raise HTTPException(status_code=501, detail="Search not yet implemented")
+
+
+    # ── Get one ───────────────────────────────────────────────────────────────────
+
+
+    @router.get("/{issue_id}", response_model=schemas.IssueOut)
+    def get_issue(
+        project_id: int,
+        issue_id: int,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user),
+    ):
+        _get_project_or_404(project_id, db, current_user.id)
+        issue = (
+            db.query(models.Issue)
+            .filter(models.Issue.id == issue_id, models.Issue.project_id == project_id)
+            .first()
+        )
+        if not issue:
+            raise HTTPException(status_code=404, detail="Issue not found")
+        return issue
+
+
+    # ── Update ────────────────────────────────────────────────────────────────────
+
+
+    @router.put("/{issue_id}", response_model=schemas.IssueOut)
+    async def update_issue(
+        project_id: int,
+        issue_id: int,
+        issue_in: schemas.IssueUpdate,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user),
+    ):
+        # BUG: Missing authorization check. Any authenticated user who has access
+        # to the project can update any issue, regardless of whether they are the
+        # reporter or assignee. Add a check like:
+        #
+        #   if issue.reporter_id != current_user.id and issue.assignee_id != current_user.id:
+        #       raise HTTPException(status_code=403, detail="Not authorized to edit this issue")
+
+        _get_project_or_404(project_id, db, current_user.id)
+        issue = (
+            db.query(models.Issue)
+            .filter(models.Issue.id == issue_id, models.Issue.project_id == project_id)
+            .first()
+        )
+        if not issue:
+            raise HTTPException(status_code=404, detail="Issue not found")
+
+        old_status = issue.status
+        for field, value in issue_in.model_dump(exclude_unset=True).items():
+            setattr(issue, field, value)
+
+        db.commit()
+        db.refresh(issue)
+
+        if issue_in.status and issue_in.status != old_status:
+            assignee_email = issue.assignee.email if issue.assignee else None
+            reporter_email = issue.reporter.email if issue.reporter else None
+            await send_status_change_notification(
+                issue.id,
+                issue.title,
+                old_status,
+                issue.status,
+                assignee_email,
+                reporter_email,
+            )
+
+        return issue
+
+
+    # ── Delete ────────────────────────────────────────────────────────────────────
+
+
+    @router.delete("/{issue_id}", status_code=204)
+    def delete_issue(
+        project_id: int,
+        issue_id: int,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user),
+    ):
+        _get_project_or_404(project_id, db, current_user.id)
+        issue = (
+            db.query(models.Issue)
+            .filter(models.Issue.id == issue_id, models.Issue.project_id == project_id)
+            .first()
+        )
+        if not issue:
+            raise HTTPException(status_code=404, detail="Issue not found")
+        if issue.reporter_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only the reporter can delete an issue")
+
+        db.delete(issue)
+        db.commit()
+  project/backend/app/models.py: |
+    from datetime import datetime, timezone
+
+    from sqlalchemy import (
+        Column,
+        DateTime,
+        Enum,
+        ForeignKey,
+        Integer,
+        String,
+        Text,
+    )
+    from sqlalchemy.orm import relationship
+
+    from app.database import Base
+
+
+    def utcnow() -> datetime:
+        """Current UTC time as a naive datetime (what the DateTime columns store)."""
+        return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+    # ── Enums ─────────────────────────────────────────────────────────────────────
+
+    IssueStatus = Enum(
+        "open", "in_progress", "review", "closed", name="issue_status"
+    )
+    IssuePriority = Enum(
+        "low", "medium", "high", "critical", name="issue_priority"
+    )
+
+
+    # ── Models ────────────────────────────────────────────────────────────────────
+
+
+    class User(Base):
+        __tablename__ = "users"
+
+        id = Column(Integer, primary_key=True, index=True)
+        email = Column(String, unique=True, index=True, nullable=False)
+        username = Column(String, unique=True, index=True, nullable=False)
+        hashed_password = Column(String, nullable=False)
+        created_at = Column(DateTime, default=utcnow)
+
+        projects = relationship("Project", back_populates="owner")
+        reported_issues = relationship(
+            "Issue", foreign_keys="Issue.reporter_id", back_populates="reporter"
+        )
+        assigned_issues = relationship(
+            "Issue", foreign_keys="Issue.assignee_id", back_populates="assignee"
+        )
+        comments = relationship("Comment", back_populates="author")
+
+
+    class Project(Base):
+        __tablename__ = "projects"
+
+        id = Column(Integer, primary_key=True, index=True)
+        name = Column(String, nullable=False)
+        description = Column(Text, nullable=True)
+        owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+        created_at = Column(DateTime, default=utcnow)
+        updated_at = Column(DateTime, default=utcnow)
+
+        owner = relationship("User", back_populates="projects")
+        issues = relationship("Issue", back_populates="project", cascade="all, delete-orphan")
+
+
+    class Issue(Base):
+        __tablename__ = "issues"
+
+        id = Column(Integer, primary_key=True, index=True)
+        title = Column(String, nullable=False)
+        description = Column(Text, nullable=True)
+        status = Column(IssueStatus, default="open", nullable=False)
+        priority = Column(IssuePriority, default="medium", nullable=False)
+        project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+        reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+        assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+        created_at = Column(DateTime, default=utcnow)
+        updated_at = Column(DateTime, default=utcnow)
+
+        project = relationship("Project", back_populates="issues")
+        reporter = relationship(
+            "User", foreign_keys=[reporter_id], back_populates="reported_issues"
+        )
+        assignee = relationship(
+            "User", foreign_keys=[assignee_id], back_populates="assigned_issues"
+        )
+        comments = relationship(
+            "Comment", back_populates="issue", cascade="all, delete-orphan"
+        )
+
+
+    class Comment(Base):
+        __tablename__ = "comments"
+
+        id = Column(Integer, primary_key=True, index=True)
+        content = Column(Text, nullable=False)
+        issue_id = Column(Integer, ForeignKey("issues.id"), nullable=False)
+        author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+        created_at = Column(DateTime, default=utcnow)
+
+        issue = relationship("Issue", back_populates="comments")
+        author = relationship("User", back_populates="comments")
+  project/backend/app/services/notifications.py: |
+    """
+    Notification service for DevBoard.
+
+    TODO: Implement email notifications when issue status changes.
+          Currently logs to stdout only. A real implementation should:
+            1. Load SMTP settings from config (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)
+            2. Look up the issue assignee and reporter emails from the database
+            3. Render an HTML template with the status change details
+            4. Send via smtplib or an async library like aiosmtplib
+
+          A stub for the async email send is left below.
+    """
+
+    import logging
+    from typing import Optional
+
+    logger = logging.getLogger(__name__)
+
+
+    async def send_status_change_notification(
+        issue_id: int,
+        issue_title: str,
+        old_status: str,
+        new_status: str,
+        assignee_email: Optional[str] = None,
+        reporter_email: Optional[str] = None,
+    ) -> None:
+        """
+        Notify relevant users when an issue status changes.
+
+        Currently a no-op stub — replace with real email logic.
+        """
+        logger.info(
+            "[NOTIFY] Issue #%d ('%s') changed: %s → %s | "
+            "assignee=%s reporter=%s",
+            issue_id,
+            issue_title,
+            old_status,
+            new_status,
+            assignee_email or "unassigned",
+            reporter_email or "unknown",
+        )
+
+        # TODO: implement actual email sending
+        # Example skeleton:
+        #
+        # import aiosmtplib
+        # from email.mime.text import MIMEText
+        #
+        # if not assignee_email:
+        #     return
+        #
+        # message = MIMEText(
+        #     f"Issue '{issue_title}' moved from {old_status} to {new_status}."
+        # )
+        # message["Subject"] = f"[DevBoard] Issue #{issue_id} status update"
+        # message["From"] = settings.smtp_user
+        # message["To"] = assignee_email
+        #
+        # await aiosmtplib.send(
+        #     message,
+        #     hostname=settings.smtp_host,
+        #     port=settings.smtp_port,
+        #     username=settings.smtp_user,
+        #     password=settings.smtp_pass,
+        #     use_tls=True,
+        # )
