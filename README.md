@@ -4,7 +4,7 @@
 
 In this hands-on lab you will use GitHub Copilot inside a [Docker Sandbox](https://docs.docker.com/ai/sandboxes/) to work on **DevBoard**, a small issue tracker (FastAPI + Next.js) located in the [`project/`](project/) folder. Along the way you will see how sandboxes keep your machine, your files and your credentials safe while an AI agent does real work.
 
-**Duration:** about 90 minutes.
+**Duration:** about 100 minutes, plus the prerequisites, which you do beforehand.
 
 ## What you will learn
 
@@ -84,7 +84,7 @@ graph LR
 | **Workspace** | Only the folder you give the sandbox is shared with it, not the rest of your disk; or the agent gets a private Git clone instead | [04](instructions/04-first-sandbox.md), [07](instructions/07-parallel-agents.md) |
 | **Private Docker daemon** | Containers the agent starts live inside the microVM, invisible to your host's Docker | [08](instructions/08-docker-inside-the-sandbox.md) |
 | **Port publishing** | Nothing inside is reachable from your machine until you publish a port | [09](instructions/09-port-forwarding.md) |
-| **MCP gateway** | Tools reach the agent through the gateway, without opening its network | [10](instructions/10-mcp-servers.md) |
+| **MCP gateway** | Tools reach the agent through the gateway, without opening its network. The MCP servers run outside the sandbox, so its network policy doesn't apply to them: register only servers you trust | [10](instructions/10-mcp-servers.md) |
 
 Because the agent can't step outside these doors, you can let it work without approving every command (`--yolo`), and still know what it can and can't reach.
 

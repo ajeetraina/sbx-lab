@@ -15,6 +15,8 @@ Run `sbx diagnose` first: it checks the most common installation problems.
 | The agent in the `mcp` sandbox has no `dhi` tools | Check that `sbx mcp ls` shows `dhi` as `ready` (run `sbx mcp add` again to re-authorize). A sandbox's MCP servers are set when it is created: if `mcp` was created before `dhi` was ready, load it with `sbx mcp load dhi --sandbox mcp`, then exit the agent session and reconnect with `sbx run --name mcp`. |
 | `git merge` refuses to run because of local changes | Commit your changes first: run `git add -A`, then `git commit`. |
 | A command in the sandbox prints `Approval required for <host>:<port>.` | The network policy blocked that host. If the lab needs it, allow it with `sbx policy allow network <host>`, or grant this one request with `sbx policy approval ls`. |
+| Windows PowerShell prints red `NativeCommandError` text after `git fetch`, `sbx rm` or another command that worked | Windows PowerShell 5.1 shows anything a program writes to its error stream (progress and warnings, for example) as an error. If the command's result is what you expected, ignore it. |
+| `sbx ports` shows `No published ports` | The sandbox is stopped. Run `sbx run --detach --name <name>`; the ports come back. |
 | A command with `&&` fails in Windows PowerShell | Windows PowerShell 5.1 doesn't support `&&`: run the two commands one after the other. |
 | The browser can't open the app on `localhost:3001` or `localhost:8000` | Check that the stack is still running in the sandbox (`docker ps` from the agent), that the ports are published (`sbx ports quickstart`), and that the servers listen on `0.0.0.0`. |
 | Docker Compose in the sandbox is slow the first time | It has to pull images and install dependencies. Subsequent runs are much faster. |

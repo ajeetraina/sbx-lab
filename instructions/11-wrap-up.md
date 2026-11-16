@@ -20,7 +20,7 @@ graph LR
 
     subgraph Lab["What the lab left on your machine"]
         direction TB
-        Sandboxes["Sandboxes<br/>quickstart, fix-bugs, add-search, add-notif, mcp, shell"]
+        Sandboxes["Sandboxes<br/>quickstart, fix-bugs, add-search, add-notif, mcp, shell-demo"]
         McpRegistration["DHI MCP registration"]
         Secrets["github and copilot secrets"]
         Policy["Locked Down policy<br/>and the lab's rules"]
@@ -51,7 +51,14 @@ sbx ls
 sbx rm quickstart fix-bugs add-search add-notif mcp
 ```
 
-`sbx rm` asks for confirmation (add `--force` to skip it). The sandbox created by `sbx run shell` in the network policies module is named after the folder you ran it from: remove it too, using the name shown by `sbx ls`. `sbx prune` removes all stopped sandboxes at once, including ones that aren't from this lab, so use it with care.
+```bash
+sbx rm shell-demo
+```
+
+`sbx rm` asks for confirmation (add `--force` to skip it). `shell-demo` is the sandbox from the network policies module. `sbx prune` removes all stopped sandboxes at once, including ones that aren't from this lab, so use it with care.
+
+> [!NOTE]
+> For the three clone-mode sandboxes (`fix-bugs`, `add-search`, `add-notif`), `sbx rm` warns that commits made inside them are lost unless you fetched them first. You did, and you merged them, so you lose nothing. Fetched branches are also kept in your repository under `refs/sandboxes/<name>/*` after removal, and `git branch <local-name> refs/sandboxes/<name>/main` recovers one.
 
 If you don't want to keep the DHI MCP server, remove its registration:
 
@@ -59,7 +66,7 @@ If you don't want to keep the DHI MCP server, remove its registration:
 sbx mcp rm dhi
 ```
 
-Remove the GitHub token you stored in [Secrets and credentials](03-secrets-credentials.md) from your OS keychain:
+Remove the GitHub token you stored in [Secrets and credentials](03-secrets-credentials.md) from your OS keychain (skip this if you use these two secrets for other work):
 
 ```bash
 sbx secret rm github -f

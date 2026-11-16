@@ -61,6 +61,9 @@ graph LR
 
     Both use the same token, but for different services: the proxy adds the `copilot` secret to the agent's requests to the Copilot service (`*.githubcopilot.com`), and the `github` secret to its requests to GitHub itself (the GitHub API, `git` over HTTPS).
 
+    > [!WARNING]
+    > If you already stored a global `github` or `copilot` secret for other work, these commands **replace** it, and the cleanup at the end of the lab removes it. Check with `sbx secret ls` first.
+
     > [!IMPORTANT]
     > Global secrets are injected when a sandbox is **created**; they cannot be added retroactively to an existing sandbox. A sandbox-scoped secret (set with `--sandbox <name>`) can be added at any time and takes precedence over the global value for that sandbox.
 

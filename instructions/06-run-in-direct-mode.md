@@ -55,7 +55,7 @@ graph LR
     - Which tests fail, with the full error output
     - Your diagnosis of each failure
 
-    Use pytest with verbose output: cd backend && pytest tests/ -v
+    Use pytest with verbose output: cd backend && ~/venv/bin/pytest tests/ -v
     ```
 
     Python is already in the sandbox, thanks to the kit, so this takes a minute or two. You should see **3 failing tests**, **1 expected failure (`xfail`)**, and all the others passing:

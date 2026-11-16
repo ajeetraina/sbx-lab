@@ -180,6 +180,7 @@ It declares two capabilities: a **lifecycle** hook that runs once when the sandb
       Schema:       v3
       Display:      Python
       Description:  Python 3 with venv and pip, installed when the sandbox is created
+      Template:     sbx-kit-src:python-78a44f7d1e7d
       Policies:
         Network:    2 allow, 0 deny
         Commands:   1 install, 0 startup, 0 init files
