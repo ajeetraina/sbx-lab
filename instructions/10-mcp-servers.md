@@ -155,7 +155,17 @@ Before switching DevBoard's Dockerfiles to the hardened images, measure what you
     sbx policy log mcp
     ```
 
-    Docker Hub and `dhi.io` were allowed by the rules you added in [Network policies](01-network-policies.md). `mirror.gcr.io`, where the database comes from, and the GitHub hosts that serve the VEX statements were allowed by the kit's own rules, which apply to this sandbox only. `check.trivy.dev`, Trivy's update check, is blocked: neither the kit nor your rules allow it. The `PROXY` column shows the proxy type that handled each request (`forward` or `forward-bypass`): what matters here is which list, allowed or blocked, a host appears in.
+    Each host the scanner reached is allowed either by your own rules or by the Trivy kit's rules:
+
+    | Host in the log | What Trivy used it for | Allowed by |
+    |-----------------|------------------------|------------|
+    | `index.docker.io`, `auth.docker.io`, `production.cloudfront.docker.com` | Reading the Docker Hub images | Your rules, from [Network policies](01-network-policies.md#allow-only-what-the-lab-needs) |
+    | `dhi.io` | Reading the hardened images | Your rules |
+    | `mirror.gcr.io` | Downloading the vulnerability database | The kit's rules, for this sandbox only |
+    | `raw.githubusercontent.com` | Downloading the VEX statements | The kit's rules, for this sandbox only |
+    | `github.com`, `api.github.com`, `codeload.github.com` | Downloading the VEX statements | Both: the kit declares them, and your GitHub rules cover them too |
+
+    One request is blocked: `check.trivy.dev`, Trivy's check for a newer version. Neither your rules nor the kit allow it, and the scan doesn't need it.
 
 The scanner read the images, not your machine: it never had your Docker credentials, your `~/.ssh` folder or any host outside its rules. And because Trivy is now in the agent's sandbox, the agent can use it too: next time, you could ask it to scan the images it suggests. Check which variant it picked first: a `-dev` image scores far worse than its runtime image.
 
