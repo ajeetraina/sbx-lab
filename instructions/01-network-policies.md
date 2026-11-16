@@ -196,7 +196,10 @@ You will see this message:
     Allowed:     docker.com:443
     Governance:  Local policy only
     Context:     global
+    Rule:        e3246d5b-cb8e-42d5-879d-45efeb4b2a4a
 ```
+
+The `Rule` line names the rule that allowed the request: it's the ID that `sbx policy allow network` printed when it added the rule (`Added rule e3246d5b-… to policy local`). Yours is different.
 
 Reconnect to the sandbox:
 
@@ -312,7 +315,7 @@ sbx policy check network api.individual.githubcopilot.com
 sbx policy check network docker.com
 ```
 
-The first two are `Allowed`; `docker.com` is still `Denied`, because you removed its rule above.
+The first two are `Allowed`, both by a wildcard rule: `api.github.com` by `**.github.com` and the Copilot host by `**.githubcopilot.com` (each `Rule` line shows a different ID). `docker.com` is still `Denied`, because you removed its rule above.
 
 > [!TIP]
 > If an agent later fails to download something, run `sbx policy log` to see the blocked host, then allow it with `sbx policy allow network <host>`.

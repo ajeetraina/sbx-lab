@@ -128,7 +128,7 @@ scenarios:
     when:
       command: [sbx, version]
     then:
-      output: ["sbx version v0.53.0 3f2a1c9"]
+      output: ["sbx version v0.54.0 4bec4a5"]
 
   - id: sbx-login
     completes: sign-in
@@ -359,6 +359,7 @@ scenarios:
         - "    Allowed:     docker.com:443"
         - "    Governance:  Local policy only"
         - "    Context:     global"
+        - "    Rule:        e3246d5b-cb8e-42d5-879d-45efeb4b2a4a"
 
   - id: policy-check-docker-denied
     completes: check-denied
@@ -377,13 +378,27 @@ scenarios:
     when:
       command: [sbx, policy, check, network]
       args:
-        0: { oneOf: ["api.github.com", "api.individual.githubcopilot.com"] }
+        0: "api.github.com"
       state: { rules.github: true }
     then:
       output:
-        - "    Allowed:     {{ args.0 }}:443"
+        - "    Allowed:     api.github.com:443"
         - "    Governance:  Local policy only"
         - "    Context:     global"
+        - "    Rule:        d8f47e3e-127e-4482-beae-962d8e5d5e16"
+
+  - id: policy-check-copilot
+    when:
+      command: [sbx, policy, check, network]
+      args:
+        0: "api.individual.githubcopilot.com"
+      state: { rules.github: true }
+    then:
+      output:
+        - "    Allowed:     api.individual.githubcopilot.com:443"
+        - "    Governance:  Local policy only"
+        - "    Context:     global"
+        - "    Rule:        0dc17953-5c26-4303-b203-31952255d03d"
 
   - id: policy-check-any
     when:
@@ -879,6 +894,21 @@ scenarios:
         - "  Workspace:  /Users/you/sbx-lab/project"
         - "✓ Created sandbox 'mcp'"
 
+  # Abridged: the real `sbx inspect` prints about 25 lines; the module shows only the MCP ones.
+  - id: inspect-mcp
+    when:
+      command: [sbx, inspect, mcp]
+      state: { sandboxes.mcp: true }
+    then:
+      output:
+        - "  Name:                    mcp"
+        - "  Agent:                   copilot"
+        - "  ..."
+        - "  MCP gateway:             configured"
+        - "  MCP mode:                static"
+        - "  MCP servers:             dhi"
+        - "  ..."
+
   - id: create-ports-demo
     when:
       command: [sbx, create, copilot]
@@ -891,7 +921,7 @@ scenarios:
         - "  Kits:       docker.io/sbx/copilot@sha256:f9c2331f..."
         - "              ./kits/python"
         - "              ./kits/api-port"
-        - { text: "  Publishing sandbox port 8000 on 127.0.0.1:60020", delay: short }
+        - { text: "  Publishing sandbox port 8000 on 127.0.0.1:60000", delay: short }
         - "✓ Created sandbox 'ports-demo'"
 
   # sbx ls grows with the lab. One table per stage, picked by state.
@@ -1008,8 +1038,8 @@ scenarios:
       state: { scan.done: true }
       output:
         - "Downloading the vulnerability database (about 130 MB) and the VEX statements..."
-        - { text: "python:3.12-slim         88 vulnerabilities (0 critical, 15 high)", delay: scan }
-        - { text: "dhi.io/python:3.12       54 vulnerabilities (0 critical, 7 high)", delay: scan }
+        - { text: "python:3.12-slim         83 vulnerabilities (0 critical, 15 high)", delay: scan }
+        - { text: "dhi.io/python:3.12       49 vulnerabilities (0 critical, 7 high)", delay: scan }
         - { text: "node:22-alpine           16 vulnerabilities (0 critical, 6 high)", delay: scan }
         - { text: "dhi.io/node:22-alpine    0 vulnerabilities (0 critical, 0 high)", delay: scan }
 
@@ -1416,13 +1446,13 @@ scenarios:
       output:
         - { text: "● Read backend/Dockerfile (python:3.12-slim) and frontend/Dockerfile (node:22-alpine)", delay: work }
         - ""
-        - "→ Calling MCP tool: dhi_get_repository"
+        - "→ Calling MCP tool: mcp-gateway-dhi_get_repository"
         - "  Arguments:"
         - "    repository=python"
         - { text: "  Result:", delay: work }
         - "    python: runtime tag 3.12 (Debian 13), 54 known CVEs. The -dev variants add pip and a shell."
         - ""
-        - "→ Calling MCP tool: dhi_get_repository"
+        - "→ Calling MCP tool: mcp-gateway-dhi_get_repository"
         - "  Arguments:"
         - "    repository=node"
         - { text: "  Result:", delay: work }
@@ -1432,7 +1462,7 @@ scenarios:
         - "  backend   python:3.12-slim  ->  dhi.io/python:3.12        54 known CVEs"
         - "  frontend  node:22-alpine    ->  dhi.io/node:22-alpine      0 known CVEs"
         - ""
-        - "Tools I called: dhi_get_repository (x2). I did not call any tool that changes your organization."
+        - "Tools I called: mcp-gateway-dhi_get_repository (x2). I did not call any tool that changes your organization."
 
   # ════════════════════════════════════════════════════════════════════════
   # Module 05: the TUI dashboard
@@ -1636,8 +1666,11 @@ scenarios:
   - id: git-fetch-missing
     when:
       command: [git, fetch]
+      args:
+        0: { any: true }
     then:
       stderr:
+        - "fatal: '{{ args.0 }}' does not appear to be a git repository"
         - "fatal: Could not read from remote repository."
         - ""
         - "Please make sure you have the correct access rights"
@@ -1899,9 +1932,7 @@ scenarios:
   - id: ports-publish-api
     completes: publish-api
     when:
-      command: [sbx, ports, quickstart]
-      args:
-        --publish: "8000:8000"
+      command: [sbx, port, publish, quickstart, "8000:8000"]
       state: { sandboxes.quickstart: true }
     then:
       state: { ports.api: true }
@@ -1910,9 +1941,7 @@ scenarios:
   - id: ports-publish-web
     completes: publish-frontend
     when:
-      command: [sbx, ports, quickstart]
-      args:
-        --publish: "3001:3000"
+      command: [sbx, port, publish, quickstart, "3001:3000"]
       state: { sandboxes.quickstart: true }
     then:
       state: { ports.web: true }
@@ -1920,20 +1949,15 @@ scenarios:
 
   - id: ports-unpublish-api
     when:
-      command: [sbx, ports, quickstart]
-      args:
-        --unpublish: "8000:8000"
+      command: [sbx, port, unpublish, quickstart, "8000:8000"]
     then:
       state: { ports.api: false }
-      output: ["Unpublished 127.0.0.1:8000"]
+      output: ["Unpublish requested for port 8000 -> 8000"]
 
   - id: ports-ls-both
     completes: list-ports
     when:
-      command: [sbx, ports, quickstart]
-      args:
-        --publish: false
-        --unpublish: false
+      command: [sbx, port, ls, quickstart]
       state:
         ports.api: true
         ports.web: true
@@ -1946,10 +1970,7 @@ scenarios:
   - id: ports-ls-api
     completes: list-ports
     when:
-      command: [sbx, ports, quickstart]
-      args:
-        --publish: false
-        --unpublish: false
+      command: [sbx, port, ls, quickstart]
       state: { ports.api: true }
     then:
       output:
@@ -1959,10 +1980,7 @@ scenarios:
   - id: ports-ls-web
     completes: list-ports
     when:
-      command: [sbx, ports, quickstart]
-      args:
-        --publish: false
-        --unpublish: false
+      command: [sbx, port, ls, quickstart]
       state: { ports.web: true }
     then:
       output:
@@ -1971,19 +1989,19 @@ scenarios:
 
   - id: ports-ls-none
     when:
-      command: [sbx, ports, quickstart]
+      command: [sbx, port, ls, quickstart]
     then:
       output: ["No published ports"]
 
   # A port declared by a kit is published at sbx create, on a host port sbx picks.
   - id: ports-ls-demo
     when:
-      command: [sbx, ports, ports-demo]
+      command: [sbx, port, ls, ports-demo]
       state: { sandboxes.portsDemo: true }
     then:
       output:
         - "HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL"
-        - "127.0.0.1   60020       8000           tcp4"
+        - "127.0.0.1   60000       8000           tcp4"
 
   # `curl` stands in for your browser: the simulation can't open localhost pages.
   - id: curl-api-health
@@ -2035,7 +2053,7 @@ scenarios:
     when:
       command: [curl]
       args:
-        0: { oneOf: ["http://127.0.0.1:60020/", "http://127.0.0.1:60020", "http://localhost:60020/"] }
+        0: { oneOf: ["http://127.0.0.1:60000/", "http://127.0.0.1:60000", "http://localhost:60000/"] }
       state: { ports.demoServer: true }
     then:
       output:
@@ -2064,7 +2082,7 @@ scenarios:
     then:
       stderr:
         - "curl: (7) Failed to connect to {{ args.0 }}: Couldn't connect to server"
-        - "Nothing is published there, or the service isn't running: see sbx ports and sbx ls."
+        - "Nothing is published there, or the service isn't running: see sbx port ls and sbx ls."
       exit: 7
 
   # ════════════════════════════════════════════════════════════════════════

@@ -71,7 +71,7 @@ Every exercise depends on `sbx` running correctly on your computer. **Do not ski
     sbx version
     ```
 
-    Expected output: a version string such as `sbx version v0.53.0 <commit>`.
+    Expected output: a version string such as `sbx version v0.54.0 <commit>`. The lab was tested with v0.54.0; if your version is older, update `sbx` first.
 
 2. Sign in to Docker (skip this if you are already signed in):
 

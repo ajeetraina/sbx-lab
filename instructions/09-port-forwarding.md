@@ -1,6 +1,6 @@
-# ☎️ Port forwarding with `sbx ports`
+# ☎️ Port forwarding with `sbx port`
 
-Sandboxes are network-isolated: your browser can't reach a server running inside one by default. `sbx ports` publishes a sandbox port on a host port.
+Sandboxes are network-isolated: your browser can't reach a server running inside one by default. `sbx port publish` publishes a sandbox port on a host port.
 
 ```mermaid
 graph LR
@@ -20,8 +20,8 @@ graph LR
 
     You -->|opens the app| Port3001
     You -->|API calls from the page| Port8000
-    Port3001 -->|"sbx ports --publish 3001:3000"| Frontend
-    Port8000 -->|"sbx ports --publish 8000:8000"| Backend
+    Port3001 -->|"sbx port publish 3001:3000"| Frontend
+    Port8000 -->|"sbx port publish 8000:8000"| Backend
 
     %% Styles — containers
     style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
@@ -44,7 +44,7 @@ graph LR
 1. With the Docker Compose stack from the previous module still running (the `quickstart` sandbox must be running: see `sbx ls`), run the following in a terminal on your host:
 
     ```bash
-    sbx ports quickstart --publish 8000:8000
+    sbx port publish quickstart 8000:8000
     ```
 
     You should see `Published 127.0.0.1:8000 -> 8000/tcp4`.
@@ -56,7 +56,7 @@ graph LR
 1. Publish the sandbox's port 3000 on port 3001 of your host to reach the frontend:
 
     ```bash
-    sbx ports quickstart --publish 3001:3000
+    sbx port publish quickstart 3001:3000
     ```
 
     The syntax is `HOST_PORT:SANDBOX_PORT`. Port 3001 is used here to show that the two ports don't have to match.
@@ -68,10 +68,10 @@ graph LR
 
 ## Additional commands
 
-1. To list the ports published by a sandbox, run `sbx ports` with the sandbox name:
+1. To list the ports published by a sandbox, run `sbx port ls` with the sandbox name:
 
     ```bash
-    sbx ports quickstart
+    sbx port ls quickstart
     ```
 
     The output looks similar to this:
@@ -82,21 +82,26 @@ graph LR
     127.0.0.1   8000        8000           tcp4
     ```
 
-2. To stop publishing a port, use the `--unpublish` flag:
+2. To stop publishing a port, use `sbx port unpublish`:
 
     ```bash
-    sbx ports quickstart --unpublish 8000:8000
+    sbx port unpublish quickstart 8000:8000
     ```
+
+    With `HOST_PORT:SANDBOX_PORT`, it removes that one mapping. With only the sandbox port (`sbx port unpublish quickstart 8000`), it removes every host port mapped to it. Publish it again with `sbx port publish quickstart 8000:8000` before you move on: the frontend needs it.
+
+> [!NOTE]
+> Older guides use `sbx ports <SANDBOX> --publish` and `--unpublish`. That command still works in `sbx` v0.54 but is deprecated, and prints a warning telling you to use `sbx port` instead.
 
 > [!IMPORTANT]
 > Services inside the sandbox must listen on `0.0.0.0`, not `127.0.0.1`. Many development servers default to `127.0.0.1`, which is why the prompt in the previous module explicitly asks the agent to bind to `0.0.0.0`.
 
 > [!IMPORTANT]
-> Ports are only reachable while the sandbox is running. A sandbox stops when no agent session is attached, so keep your agent session open, or start it without a session with `sbx run --detach --name quickstart`. Published ports are restored when the sandbox restarts: while it is stopped, `sbx ports quickstart` shows `No published ports`, and the list comes back once it runs again.
+> Ports are only reachable while the sandbox is running. A sandbox stops when no agent session is attached, so keep your agent session open, or start it without a session with `sbx run --detach --name quickstart`. Published ports are restored when the sandbox restarts: while it is stopped, `sbx port ls quickstart` shows `No published ports`, and the list comes back once it runs again.
 
 ## Publish a port from a kit
 
-`sbx ports` publishes a port after the sandbox exists. A [kit](02-kits.md) can declare the ports its sandbox serves instead, with the `com.docker.sandbox/port@1` capability: the port is then published as soon as the sandbox is created, for everyone who uses the kit. The project includes a small mixin for the API's port, [`project/kits/api-port/api-port.yaml`](../project/kits/api-port/api-port.yaml):
+`sbx port publish` publishes a port after the sandbox exists. A [kit](02-kits.md) can declare the ports its sandbox serves instead, with the `com.docker.sandbox/port@1` capability: the port is then published as soon as the sandbox is created, for everyone who uses the kit. The project includes a small mixin for the API's port, [`project/kits/api-port/api-port.yaml`](../project/kits/api-port/api-port.yaml):
 
 ```yaml
 # syntax=docker/sandbox-kit:3
@@ -112,7 +117,7 @@ capabilities:
       container: 8000
 ```
 
-There's one difference with `sbx ports --publish`: a kit only names the **sandbox** port. The **host** port is chosen by `sbx`, a free one on `127.0.0.1`, and chosen again each time the sandbox starts. That's on purpose: a kit is shared, and two kits asking for the same host port would collide. When the host port matters, as for DevBoard's API, which the browser calls at `localhost:8000`, you still pin it yourself with `sbx ports --publish`.
+There's one difference with `sbx port publish`: a kit only names the **sandbox** port. The **host** port is chosen by `sbx`, a free one on `127.0.0.1`, and chosen again each time the sandbox starts. That's on purpose: a kit is shared, and two kits asking for the same host port would collide. When the host port matters, as for DevBoard's API, which the browser calls at `localhost:8000`, you still pin it yourself with `sbx port publish`.
 
 ```mermaid
 graph LR
@@ -134,7 +139,7 @@ graph LR
     You -->|opens| Ephemeral
     Kit -->|"published at sbx create"| Ephemeral
     Ephemeral -->|forwards to| Service
-    Pinned -->|"sbx ports --publish 8000:8000"| Service
+    Pinned -->|"sbx port publish 8000:8000"| Service
 
     %% Styles — containers
     style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
@@ -165,12 +170,12 @@ Try it in a separate sandbox, from the `project` directory, in another terminal.
 2. List its ports. You haven't published anything, yet port 8000 is already there, on a host port that `sbx` picked:
 
     ```bash
-    sbx ports ports-demo
+    sbx port ls ports-demo
     ```
 
     ```console
     HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL
-    127.0.0.1   60020       8000           tcp4
+    127.0.0.1   60000       8000           tcp4
     ```
 
 3. Start a small web server on port 8000 in the sandbox. It serves the project folder:

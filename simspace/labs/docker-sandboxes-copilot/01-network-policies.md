@@ -229,7 +229,7 @@ List the policies again: `local-policy` now has one network rule per host (10 in
 sbx policy ls
 ```
 
-Check a few of them. The first two are `Allowed`; `docker.com` is still `Denied`, because you removed its rule above:
+Check a few of them. The first two are `Allowed`, both by a wildcard rule: `api.github.com` by `**.github.com` and the Copilot host by `**.githubcopilot.com` (each `Rule` line shows a different ID). `docker.com` is still `Denied`, because you removed its rule above:
 
 ```bash
 sbx policy check network api.github.com

@@ -105,7 +105,7 @@ This module uses several terminals on your host, all opened at the root of the r
     ```
 
     > [!NOTE]
-    > The fetch only works while the sandbox is running. If you get a connection error, restart it with `sbx run --detach --name fix-bugs`.
+    > Git reaches the sandbox's clone through `sbx` itself, so the fetch only works while the sandbox is running. When the sandbox stops, `sbx` removes the `sandbox-fix-bugs` remote, and `git fetch` fails with `'sandbox-fix-bugs' does not appear to be a git repository`. Restart the sandbox with `sbx run --detach --name fix-bugs`: the remote comes back, and the fetch works again.
 
     Once merged, exit the `fix-bugs` session in terminal 1 (press **`Ctrl-C` twice**).
 

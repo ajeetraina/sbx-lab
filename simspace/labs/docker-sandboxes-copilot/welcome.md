@@ -61,7 +61,7 @@ graph LR
     Agent -->|tool calls| Gateway
     Gateway -->|calls| McpServers
     Agent -->|runs| Docker
-    You -->|sbx ports| Docker
+    You -->|sbx port| Docker
 
     style Host fill:#E5F2FC,stroke:#1D63ED,color:#00084D
     style Sandbox fill:#f0faf4,stroke:#86c5a0,color:#00084D
