@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1
-# Adapted from the trivy kit of docker/sbx-kits-contrib (v3 branch, Apache-2.0):
-# https://github.com/docker/sbx-kits-contrib/tree/v3/trivy
+# Adapted from the trivy-mixin kit of docker/sbx-kits-contrib (v3 branch, Apache-2.0):
+# https://github.com/docker/sbx-kits-contrib/tree/v3/trivy-mixin
 # Changes: shorter comments, VEX repositories for Docker Hardened Images, and a
 # scan-images script.
 
-# The sandbox template: bash, the agent user (uid 1000), git and a CA store.
-FROM docker/sandbox-templates:shell-docker
+# Build stage: download and check Trivy in the sandbox template, as root.
+FROM docker/sandbox-templates:shell-docker AS build
 
 # Pinned by version AND by the SHA256 of each architecture's release tarball,
 # from the release's checksums.txt. To upgrade, change all three together,
@@ -13,9 +13,8 @@ FROM docker/sandbox-templates:shell-docker
 ARG TRIVY_VERSION=0.70.0
 ARG TARGETARCH
 
-# Download, verify and install Trivy while the kit is built, as root.
 # No `curl | sh` install script: a script or a tag can be rewritten, a checked
-# SHA256 can't.
+# SHA256 can't. The binary goes to /out, which becomes the mixin's content.
 USER root
 RUN set -eu; \
     case "${TARGETARCH}" in \
@@ -30,23 +29,15 @@ RUN set -eu; \
     curl --proto '=https' --tlsv1.2 -fsSL -o /tmp/trivy.tgz \
       "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${tarball}"; \
     echo "${sha256}  /tmp/trivy.tgz" | sha256sum -c -; \
-    tar -C /usr/local/bin -xzf /tmp/trivy.tgz trivy; \
+    mkdir -p /out/usr/local/bin; \
+    tar -C /out/usr/local/bin -xzf /tmp/trivy.tgz trivy; \
     rm /tmp/trivy.tgz; \
-    chown 0:0 /usr/local/bin/trivy; \
-    chmod 0755 /usr/local/bin/trivy; \
-    trivy --version
+    chmod 0755 /out/usr/local/bin/trivy; \
+    chown 0:0 /out/usr/local/bin/trivy; \
+    /out/usr/local/bin/trivy --version
 
-# A helper that scans images and prints one line per image.
+# The mixin itself: only these files, laid over the agent's sandbox image.
+FROM scratch
+COPY --from=build /out /
 COPY --chmod=0755 scan-images.sh /usr/local/bin/scan-images
-
-# Back to the unprivileged user the sandbox runs as.
-USER agent
-
-# Let `trivy image --vex repo` apply the VEX statements of Docker Hardened Images.
-COPY --chown=agent:agent vex-repository.yaml /home/agent/.trivy/vex/repository.yaml
-
-# sbx reads this label as the sandbox's agent name.
-LABEL com.docker.sandboxes.flavor="trivy"
-
-# Open a login shell in the workspace, with trivy on the PATH.
-ENTRYPOINT ["bash", "-l"]
+COPY vex-repository.yaml /usr/local/share/trivy/vex-repository.yaml

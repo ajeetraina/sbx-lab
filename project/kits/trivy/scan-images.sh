@@ -3,6 +3,13 @@
 # applying the VEX statements of vex-repository.yaml, and print one line per
 # image: its total number of vulnerabilities, and how many are critical or high.
 set -eu
+
+# Trivy reads its VEX repositories from ~/.trivy/vex/repository.yaml.
+if [ ! -f "$HOME/.trivy/vex/repository.yaml" ]; then
+  mkdir -p "$HOME/.trivy/vex"
+  cp /usr/local/share/trivy/vex-repository.yaml "$HOME/.trivy/vex/repository.yaml"
+fi
+
 for image in "$@"; do
   printf '%-24s ' "$image"
   trivy image --image-src remote --scanners vuln --vex repo --no-progress --quiet \

@@ -185,21 +185,19 @@ To share a kit, publish it in a Git repository or an OCI registry (`sbx kit push
 
 ## A kit with its own image: Trivy
 
-The Python kit installs its tool when the sandbox is created, so its network policy must open the Debian hosts during that install. A kit can also bring a Dockerfile and install its tools **when the kit itself is built**, on your machine, before any sandbox exists. The project includes a second kit made that way, [`project/kits/trivy/`](../project/kits/trivy/), adapted from Docker's [trivy kit](https://github.com/docker/sbx-kits-contrib/tree/v3/trivy). It runs [Trivy](https://trivy.dev/), Aqua's open source vulnerability scanner, in a sandbox of its own:
+The Python kit installs its tool when the sandbox is created, so its network policy must open the Debian hosts during that install. A kit can also bring a Dockerfile and install its tools **when the kit itself is built**, on your machine, before any sandbox exists. The project includes a second mixin made that way, [`project/kits/trivy/`](../project/kits/trivy/), adapted from Docker's [trivy-mixin kit](https://github.com/docker/sbx-kits-contrib/tree/v3/trivy-mixin). It adds [Trivy](https://trivy.dev/), Aqua's open source vulnerability scanner, to an agent's sandbox:
 
 ```yaml
 # syntax=docker/sandbox-kit:3
 schemaVersion: "3"
-kind: workload
+kind: mixin
 displayName: Trivy
-description: Aqua's open source vulnerability scanner, in its own sandbox
+description: Aqua's open source vulnerability scanner, added to an agent's sandbox
 sourceUrl: https://github.com/aquasecurity/trivy
 
 provides: ["trivy@0.70.0"]
 
 capabilities:
-  - type: com.docker.sandbox/sbx@1
-
   - type: com.docker.sandbox/network-policy@1
     config:
       runtime:
@@ -215,11 +213,11 @@ capabilities:
 
 The first three hosts serve Trivy's vulnerability database. The GitHub hosts serve [VEX](https://docs.docker.com/dhi/explore/security-concepts/vex/) statements, which mark the CVEs that don't affect an image, including those published for Docker Hardened Images.
 
-Next to it, [`trivy.dockerfile`](../project/kits/trivy/trivy.dockerfile) builds the kit's image. It starts from the sandbox template, downloads Trivy 0.70.0, and checks the download against the SHA256 published for each architecture. It then adds two files from the kit's folder: [`scan-images.sh`](../project/kits/trivy/scan-images.sh), a helper that prints one summary line per scanned image, and [`vex-repository.yaml`](../project/kits/trivy/vex-repository.yaml), which tells Trivy where to find the VEX statements. Finally, it opens a login shell as the unprivileged `agent` user:
+Next to it, [`trivy.dockerfile`](../project/kits/trivy/trivy.dockerfile) builds the kit's image in two stages. The first starts from the sandbox template, downloads Trivy 0.70.0, and checks the download against the SHA256 published for each architecture. The second starts from an empty image (`scratch`) and keeps only the files the mixin adds: the `trivy` binary, and two files from the kit's folder, [`scan-images.sh`](../project/kits/trivy/scan-images.sh), a helper that prints one summary line per scanned image, and [`vex-repository.yaml`](../project/kits/trivy/vex-repository.yaml), which tells Trivy where to find the VEX statements. When you add the mixin to an agent, `sbx` lays these files over the agent's image:
 
 ```dockerfile
 # syntax=docker/dockerfile:1
-FROM docker/sandbox-templates:shell-docker
+FROM docker/sandbox-templates:shell-docker AS build
 
 ARG TRIVY_VERSION=0.70.0
 ARG TARGETARCH
@@ -238,31 +236,30 @@ RUN set -eu; \
     curl --proto '=https' --tlsv1.2 -fsSL -o /tmp/trivy.tgz \
       "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${tarball}"; \
     echo "${sha256}  /tmp/trivy.tgz" | sha256sum -c -; \
-    tar -C /usr/local/bin -xzf /tmp/trivy.tgz trivy; \
+    mkdir -p /out/usr/local/bin; \
+    tar -C /out/usr/local/bin -xzf /tmp/trivy.tgz trivy; \
     rm /tmp/trivy.tgz; \
-    chown 0:0 /usr/local/bin/trivy; \
-    chmod 0755 /usr/local/bin/trivy; \
-    trivy --version
+    chmod 0755 /out/usr/local/bin/trivy; \
+    chown 0:0 /out/usr/local/bin/trivy; \
+    /out/usr/local/bin/trivy --version
 
+FROM scratch
+COPY --from=build /out /
 COPY --chmod=0755 scan-images.sh /usr/local/bin/scan-images
-
-USER agent
-COPY --chown=agent:agent vex-repository.yaml /home/agent/.trivy/vex/repository.yaml
-LABEL com.docker.sandboxes.flavor="trivy"
-ENTRYPOINT ["bash", "-l"]
+COPY vex-repository.yaml /usr/local/share/trivy/vex-repository.yaml
 ```
 
-Compared with the Python kit:
+Compared with the Python kit, both are mixins, but:
 
 | | Python kit | Trivy kit |
 |---|---|---|
-| Kind | `mixin`, added to the Copilot agent | `workload`: its own sandbox, a shell with no AI agent |
-| Installs its tool | When the sandbox is created (`lifecycle` hook) | When the kit is built (`trivy.dockerfile`), pinned by version and SHA256 |
+| Installs its tool | When the sandbox is created (`lifecycle` hook running `apt-get`) | When the kit is built (`trivy.dockerfile`), pinned by version and SHA256 |
+| Adds to the sandbox | Packages, installed inside each new sandbox | A layer of files, laid over the agent's image |
 | Network policy | Debian hosts while installing, PyPI afterwards | Trivy's vulnerability database and the VEX statements, at runtime only |
 
 Why put a scanner in a sandbox? It reads all your code, and it's a supply-chain target like any other tool: Trivy's own releases were compromised in March 2026. In a sandbox, it sees the workspace but not your `~/.ssh` or `~/.docker/config.json`, and it can reach its database, the VEX statements and the hosts you allowed, nothing else.
 
-You'll use this kit in [MCP servers](10-mcp-servers.md), to scan DevBoard's base images before and after switching them to Docker Hardened Images.
+You'll add this kit to an agent's sandbox in [MCP servers](10-mcp-servers.md), to scan DevBoard's base images before and after switching them to Docker Hardened Images.
 
 The next two sections show two more ways to package what you just did. They're here so you know they exist: you don't need to run them, and the rest of the lab doesn't use them.
 
