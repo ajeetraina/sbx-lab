@@ -54,14 +54,23 @@ graph LR
   extension, and shows `http://localhost:8085` in its right panel. Only this container is started: no configurator,
   VS Code workspace, socket proxy or port republisher, which a host terminal doesn't need. The Markdown is mounted
   read-only and re-read on every page load, so you can edit the lab and refresh.
-- **Content** ([`content.mjs`](content.mjs)): copies `instructions/` to `.content/` without the navigation footer of
-  each module (`[[<< Previous: …] | [Next >> …]]`), which the Labspace replaces with its own Previous/Next buttons, and
-  keeps the copy current while the Labspace runs. The static build uses it too.
-- **Theme** ([`theme.css`](theme.css)): gives the Labspace interface the look of the simulated lab in
-  [`../simspace`](../simspace) (fonts, headings, inline code, alerts, code blocks, footer buttons), and the bridge's
-  terminal pane the look of its terminals. `start.sh` adds it to the image's own `index.html` (in `.ui/`), which it
-  mounts in the container; the static build adds it too. The simulated lab's header and milestones have no
-  equivalent in the Labspace interface.
+- **Content** ([`content.mjs`](content.mjs)): copies `instructions/` to `.content/` as the Labspace shows it, and keeps
+  the copy current while the Labspace runs. The static build uses it too.
+  - It removes the navigation footer of each module (`[[<< Previous: …] | [Next >> …]]`): the Labspace has its own
+    Previous/Next buttons.
+  - It keeps the Run and Copy buttons for what you run or type: `bash` blocks are commands (Run and Copy), `console`
+    blocks are prompts for the agent (Copy only) or, when they start with a table header, outputs (no button), and
+    `none`, `yaml` or `dockerfile` blocks are outputs or files to read (no button).
+  - It writes `labspace-ui.json`, the sections and milestones for the header and the milestones card.
+- **Look of the simulated lab**: [`theme.css`](theme.css) gives the Labspace interface the look of the simulated lab in
+  [`../simspace`](../simspace) (fonts, headings, inline code, alerts, code blocks, footer buttons), and
+  [`labspace-ui.js`](labspace-ui.js) adds its header ("Labspace", the title, `2 / 13`, a progress track) and a
+  **Milestones** card at the top of each section. The milestones are the `steps` of
+  [`../instructions/labspace.yaml`](../instructions/labspace.yaml), the same as the simulated lab's: one checks itself
+  when you click Run or Copy on a code block, or open a link, whose text contains its `match`, and you can click one to
+  check or uncheck it. Progress stays in your browser. `start.sh` adds both files to the image's own `index.html`
+  (in `.ui/`, mounted in the container) and serves them from `.content/`; the static build adds them too. The bridge's
+  terminal pane takes the look of the simulated lab's terminals.
 - **Bridge** ([`bridge/server.js`](bridge/server.js)): a small Node.js server on your machine. It serves the terminal
   page (xterm.js), runs one shell per tab with node-pty, and implements the two endpoints the interface calls.
 - [`../instructions/labspace.yaml`](../instructions/labspace.yaml) lists the sections.

@@ -22,6 +22,6 @@ services:
       - ./metadata.json:/etc/labspace-support/metadata/metadata.json:ro
       # Read at start-up by the VS Code workspace service, which the ttyd mode doesn't use
       - ./unused-signing.key:/etc/labspace-support/private-key/labspace.key:ro
-      # The look of the simulated lab (simspace/): the image's index.html, plus theme.css (see start.sh)
+      # The look of the simulated lab (simspace/): the image's index.html, which also loads theme.css and the
+      # header and milestones of labspace-ui.js, served from .content (see start.sh and content.mjs)
       - ./.ui/index.html:/usr/local/app/public/index.html:ro
-      - ./theme.css:/usr/local/app/public/labspace-theme.css:ro

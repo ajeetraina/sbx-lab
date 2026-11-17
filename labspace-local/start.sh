@@ -54,7 +54,7 @@ if (exec 3<>"/dev/tcp/127.0.0.1/$BRIDGE_PORT") 2>/dev/null; then
   exit 1
 fi
 
-if [ ! -d "$here/bridge/node_modules" ]; then
+if [ ! -d "$here/bridge/node_modules/yaml" ]; then
   echo "Installing the bridge dependencies..."
   (cd "$here/bridge" && npm install --no-audit --no-fund --loglevel=error)
 fi

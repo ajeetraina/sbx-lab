@@ -269,3 +269,183 @@ body {
 #workshop-footer .material-symbols-outlined {
   font-size: 16px;
 }
+
+/* ------------------------------------------------------------------ header and milestones (labspace-ui.js) */
+
+.lsui-header {
+  flex: 0 0 auto;
+  padding: 16px 32px 0;
+  background: var(--wp-bg);
+  border-bottom: 1px solid var(--wp-border);
+  position: relative;
+  z-index: 10;
+}
+
+.lsui-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+}
+
+.lsui-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.lsui-brand-logo {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+}
+
+[data-bs-theme="dark"] .lsui-brand-logo {
+  filter: brightness(0) saturate(100%) invert(1);
+}
+
+.lsui-brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.lsui-brand-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--wp-accent);
+}
+
+.lsui-brand-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wp-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lsui-progress-count {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.lsui-progress-current {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--wp-heading);
+}
+
+.lsui-progress-total {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--wp-text-muted);
+}
+
+.lsui-progress-track {
+  display: flex;
+  gap: 4px;
+  padding-bottom: 14px;
+}
+
+.lsui-progress-segment {
+  height: 4px;
+  flex: 1 1 0;
+  border-radius: 999px;
+  background: var(--wp-border);
+  transition: background-color 0.3s ease;
+}
+
+.lsui-progress-segment.is-complete {
+  background: var(--wp-accent);
+}
+
+.lsui-progress-segment.is-active {
+  background: var(--wp-accent);
+  opacity: 0.55;
+}
+
+.lsui-milestones {
+  /* simspace's .section-milestones card, in the 760px column of the instructions */
+  box-sizing: border-box;
+  width: calc(100% - 64px);
+  max-width: 696px;
+  margin: 28px auto 0;
+  padding: 12px 14px;
+  border: 1px solid var(--wp-border);
+  border-radius: 10px;
+  background: var(--wp-surface);
+}
+
+.lsui-milestones[hidden] {
+  display: none;
+}
+
+.lsui-milestones:not([hidden]) + .workshop-body {
+  padding-top: 24px !important;
+}
+
+.lsui-milestones-caption {
+  display: block;
+}
+
+.lsui-milestones > .lsui-milestones-caption {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wp-text-muted);
+  margin-bottom: 8px;
+}
+
+.lsui-milestones-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lsui-milestone-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--wp-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lsui-milestone-check {
+  flex: 0 0 auto;
+  font-size: 18px !important;
+  color: var(--wp-text-muted);
+}
+
+.lsui-milestone-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lsui-milestone.is-done .lsui-milestone-check {
+  color: #2d9568;
+  font-variation-settings: "FILL" 1;
+}
+
+.lsui-milestone.is-done .lsui-milestone-title {
+  color: var(--wp-text-muted);
+}
