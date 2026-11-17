@@ -1,0 +1,23 @@
+# Labspace interface only: the instructions on the left, and on the right the terminal
+# served by the bridge (bridge/server.js) that runs on your machine, not in a container.
+# Start it with ./start.sh, which also starts the bridge and sets LABSPACE_TOKEN.
+services:
+  interface:
+    image: dockersamples/labspace-interface:latest
+    ports:
+      - "127.0.0.1:3030:3030"
+    environment:
+      # Send the Run and Save buttons to the bridge on the host instead of a VS Code container
+      WORKSPACE_TYPE: ttyd
+      WORKSPACE_API_URL: http://host.docker.internal:${BRIDGE_PORT:-8085}
+      WORKSPACE_API_TOKEN: ${LABSPACE_TOKEN:?run ./start.sh, which sets LABSPACE_TOKEN}
+      # Re-read labspace.yaml and the Markdown on every request, so edits show on refresh
+      CONTENT_DEV_MODE: "true"
+    extra_hosts:
+      # Already set by Docker Desktop; needed on Docker Engine for Linux
+      - host.docker.internal:host-gateway
+    volumes:
+      - ../instructions:/labspace/instructions:ro
+      - ./metadata.json:/etc/labspace-support/metadata/metadata.json:ro
+      # Read at start-up by the VS Code workspace service, which the ttyd mode doesn't use
+      - ./unused-signing.key:/etc/labspace-support/private-key/labspace.key:ro
