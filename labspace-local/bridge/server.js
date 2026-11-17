@@ -7,7 +7,8 @@
 // Both need "Authorization: Bearer $LABSPACE_TOKEN".
 //
 // The page at / is a set of xterm.js tabs, each one a real shell (node-pty) on this machine.
-// A Run button with `terminal-id=<name>` opens (or reuses) the tab of that name.
+// A Run button with `terminal-id=<name>` opens (or reuses) the tab of that name: the lab uses
+// terminal-2, terminal-3 and terminal-4, shown as "Terminal 2"…
 //
 // It listens on 127.0.0.1 only, and checks the Host and Origin headers, so that another web
 // page or another machine can't type into your shell.
@@ -26,7 +27,8 @@ const PORT = Number(process.env.BRIDGE_PORT || 8085);
 const BIND = process.env.BRIDGE_BIND || "127.0.0.1";
 const TOKEN = process.env.LABSPACE_TOKEN;
 const WORKSPACE = path.resolve(process.env.LABSPACE_WORKSPACE || path.join(here, "..", ".."));
-const DEFAULT_TERMINAL = "labspace";
+// Blocks without a terminal-id run in Terminal 1; the lab names the others terminal-2, -3, -4
+const DEFAULT_TERMINAL = "terminal-1";
 const SCROLLBACK_BYTES = 256 * 1024;
 
 if (!TOKEN || TOKEN.length < 16) {
@@ -76,23 +78,51 @@ function ensureTerminal(id = DEFAULT_TERMINAL) {
     // Input sent before the shell prints its prompt would be echoed twice: hold it until then.
     pending: [],
     ready: false,
+    // Whether the program in the terminal asked for bracketed paste (\e[?2004h): zsh at its prompt,
+    // and agent CLIs such as Copilot. Then a pasted block arrives as one piece of text.
+    bracketedPaste: false,
     write(data) {
       if (this.ready) this.pty.write(data);
-      else this.pending.push(data);
+      else this.pending.push(() => this.pty.write(data));
+    },
+    // Types a Run block and presses Enter. With bracketed paste, a multi-line block is pasted whole,
+    // so a prompt reaches the agent as one message and a shell gets every line before Enter;
+    // without it, each line is typed and entered in turn.
+    run(text) {
+      const go = () => {
+        const lines = text.replace(/\r\n?/g, "\n").replace(/\n+$/, "");
+        if (this.bracketedPaste) {
+          this.pty.write(`\x1b[200~${lines.replace(/\n/g, "\r")}\x1b[201~`);
+          // Enter as its own key press, once the program has taken the paste in
+          setTimeout(() => !this.exited && this.pty.write("\r"), 60);
+        } else {
+          this.pty.write(lines.replace(/\n/g, "\r") + "\r");
+        }
+      };
+      if (this.ready) go();
+      else this.pending.push(go);
     },
   };
   const markReady = () => {
     if (term.ready) return;
     term.ready = true;
-    for (const data of term.pending.splice(0)) term.pty.write(data);
+    for (const send of term.pending.splice(0)) send();
   };
   // Some shells (or slow login profiles) print nothing for a while; don't wait forever.
   setTimeout(markReady, 3000);
+  // Input typed before the shell's line editor reads it is echoed raw (a stray "^[[201~" around a
+  // paste). The prompt is no sign: zsh themes with an "instant prompt" (powerlevel10k) draw it, with
+  // bracketed paste on, at once, while the shell still loads for a few hundred milliseconds. So wait
+  // for the output to pause, and at least a second after the start.
+  const started = Date.now();
   let readyTimer;
   term.pty.onData((data) => {
+    const on = data.lastIndexOf("\x1b[?2004h");
+    const off = data.lastIndexOf("\x1b[?2004l");
+    if (on !== off) term.bracketedPaste = on > off;
     if (!term.ready) {
       clearTimeout(readyTimer);
-      readyTimer = setTimeout(markReady, 150); // the prompt usually comes in a few chunks
+      readyTimer = setTimeout(markReady, Math.max(300, 1000 - (Date.now() - started)));
     }
     term.scrollback = (term.scrollback + data).slice(-SCROLLBACK_BYTES);
     broadcast({ t: "out", id, data });
@@ -186,7 +216,7 @@ const server = http.createServer(async (req, res) => {
         const id = typeof body.terminalId === "string" && body.terminalId ? body.terminalId : DEFAULT_TERMINAL;
         const term = ensureTerminal(id);
         // Bracketed-paste would be nicer for multi-line blocks, but most shells handle \r per line.
-        term.write(body.cmd.replace(/\r?\n/g, "\r") + "\r");
+        term.run(body.cmd);
         broadcast({ t: "focus", id });
         console.log(`[run:${id}] ${body.cmd.split("\n")[0]}${body.cmd.includes("\n") ? " …" : ""}`);
         return send(res, 200, { ok: true });

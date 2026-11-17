@@ -1,5 +1,10 @@
 # Labspace definition of the lab, rendered with a terminal on your own machine.
 # See ../labspace-local/README.md to start it.
+#
+# `steps` are the milestones shown at the top of each section (the same ones as the simulated lab in
+# ../simspace). A step checks itself when you click Run or Copy on a code block, or open a link, whose
+# text contains its `match`; you can also click a step to check or uncheck it. Progress is kept in
+# your browser.
 metadata:
   id: mathieu-benoit/sbx-lab
   sourceRepo: github.com/mathieu-benoit/sbx-lab
@@ -12,27 +17,96 @@ description: >
 sections:
   - title: Prerequisites
     contentPath: 00-prerequisites.md
+    steps:
+      - { title: "Check that sbx is installed", match: "sbx version" }
+      - { title: "Sign in to Docker", match: "sbx login" }
+      - { title: "Run sbx diagnose", match: "sbx diagnose" }
+      - { title: "Check that your policies are local", match: "sbx policy ls" }
+      - { title: "Clone the lab repository", match: "git clone https://github.com/mathieu-benoit/sbx-lab" }
+      - { title: "Warm up the sandbox images", match: "sbx rm --force warmup-shell warmup-copilot" }
   - title: Network policies
     contentPath: 01-network-policies.md
+    steps:
+      - { title: "Switch to the Locked Down policy", match: "sbx policy reset" }
+      - { title: "Check that docker.com is denied", match: "sbx policy check network docker.com" }
+      - { title: "See the proxy block a request from a sandbox", match: "curl docker.com" }
+      - { title: "Allow a host", match: "sbx policy allow network docker.com" }
+      - { title: "Reach the allowed host from the sandbox", match: "curl -I docker.com" }
+      - { title: "Remove a custom rule", match: "sbx policy rm network --resource" }
+      - { title: "Allow GitHub and Copilot", match: "**.githubcopilot.com" }
+      - { title: "Allow Debian and PyPI", match: "files.pythonhosted.org" }
+      - { title: "Allow Docker Hub", match: "production.cloudfront.docker.com" }
+      - { title: "Allow npm", match: "registry.npmjs.org" }
+      - { title: "List the lab's policy", match: "sbx policy check network api.github.com" }
   - title: Kits
     contentPath: 02-kits.md
+    steps:
+      - { title: "Inspect the Copilot kit", match: "sbx kit inspect sbx/copilot" }
+      - { title: "Compare with the Claude Code kit", match: "sbx kit inspect sbx/claude" }
+      - { title: "Validate the Python kit", match: "sbx kit validate ./project/kits/python" }
+      - { title: "Inspect the Python kit", match: "sbx kit inspect ./project/kits/python" }
   - title: Secrets and credentials
     contentPath: 03-secrets-credentials.md
+    steps:
+      - { title: "Store the github and copilot secrets", match: "sbx secret set github" }
+      - { title: "Check that both secrets are stored", match: "sbx secret ls" }
   - title: Agent sandbox
     contentPath: 04-first-sandbox.md
+    steps:
+      - { title: "Create the quickstart sandbox", match: "sbx create --name quickstart" }
+      - { title: "Check that Python came with the kit", match: "python3 --version" }
+      - { title: "Check that your token isn't in the sandbox", match: "grep _TOKEN=" }
+      - { title: "Check what the agent can see of your disk", match: "pwd; ls -A ~" }
+      - { title: "See an upload to a paste site blocked", match: "--data-binary" }
+      - { title: "Meet your agent", match: "Explore this codebase" }
   - title: TUI dashboard
     contentPath: 05-tui-dashboard.md
+    steps:
+      - { title: "Open the TUI dashboard", match: "sbx" }
   - title: Run in direct mode
     contentPath: 06-run-in-direct-mode.md
+    steps:
+      - { title: "Have the agent run the tests", match: "Set up the Python environment" }
+      - { title: "Have the agent fix the pagination bug", match: "because of a pagination bug" }
+      - { title: "Confirm that the pagination tests pass", match: "Run the full test suite" }
+      - { title: "Review and commit the fix", match: "git add -A" }
   - title: Clone mode and parallel agents
     contentPath: 07-parallel-agents.md
+    steps:
+      - { title: "Fix a bug in a private clone", match: "--name fix-bugs" }
+      - { title: "Fetch and merge the clone's commit", match: "git merge --no-edit sandbox-fix-bugs/main" }
+      - { title: "Start the search agent", match: "--name add-search" }
+      - { title: "Start the notifications agent", match: "--name add-notif" }
+      - { title: "Fetch both agents' work", match: "git fetch sandbox-add-search" }
+      - { title: "Merge both agents' branches", match: "git merge --no-edit sandbox-add-search/main" }
+      - { title: "Run the full suite on the merged result", match: "Run the full test suite" }
   - title: Docker inside the sandbox
     contentPath: 08-docker-inside-the-sandbox.md
+    steps:
+      - { title: "Have the agent start the stack with Compose", match: "Start the full application stack" }
+      - { title: "List the containers inside the sandbox", match: "!docker ps" }
   - title: Port forwarding
     contentPath: 09-port-forwarding.md
+    steps:
+      - { title: "Publish the API port", match: "sbx port publish quickstart 8000:8000" }
+      - { title: "Publish the frontend on another port", match: "sbx port publish quickstart 3001:3000" }
+      - { title: "Reach the app from your host", match: "localhost:8000/docs" }
+      - { title: "List the published ports", match: "sbx port ls quickstart" }
+      - { title: "Publish a port from a kit", match: "sbx create --name ports-demo" }
   - title: MCP servers
     contentPath: 10-mcp-servers.md
+    steps:
+      - { title: "Register the DHI MCP server", match: "sbx mcp add dhi" }
+      - { title: "Create a sandbox with the DHI server and the Trivy kit", match: "sbx create --name mcp" }
+      - { title: "Ask the agent for hardened images", match: "Docker Hardened Image" }
+      - { title: "Check that no network rule was needed", match: "sbx policy log mcp" }
+      - { title: "Scan the images with Trivy", match: "scan-images" }
   - title: Wrap up
     contentPath: 11-wrap-up.md
+    steps:
+      - { title: "Remove the lab's sandboxes", match: "sbx rm quickstart" }
+      - { title: "Remove the shell-demo sandbox", match: "sbx rm shell-demo" }
+      - { title: "Remove the DHI MCP registration", match: "sbx mcp rm dhi" }
+      - { title: "Remove the secrets", match: "sbx secret rm" }
   - title: Troubleshooting
     contentPath: troubleshooting.md

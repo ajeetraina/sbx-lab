@@ -67,7 +67,7 @@ graph LR
 
 1. Register the DHI MCP server, from a terminal on your host:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx mcp add dhi --url https://dhi.io/mcp
     ```
 
@@ -75,7 +75,7 @@ graph LR
 
 2. Check that it's registered and ready:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx mcp ls
     ```
 
@@ -86,7 +86,7 @@ graph LR
 
 3. From the `project` directory, create a dedicated sandbox named `mcp`, with the DHI server and the Trivy kit:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx create --name mcp --static-mcp dhi --kit ./kits/trivy copilot .
     ```
 
@@ -94,7 +94,7 @@ graph LR
 
     Check what the gateway was given:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx inspect mcp
     ```
 
@@ -108,13 +108,13 @@ graph LR
 
 4. Start an agent in the `mcp` sandbox:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx run --name mcp
     ```
 
     Then give it this prompt:
 
-    ```console
+    ```console terminal-id=terminal-2
     For both the frontend and the backend app, from their Dockerfiles, find the runtime Docker Hardened Image (not a -dev variant) that matches it and how many known CVEs it has. At the end, list the tools you called.
     ```
 
@@ -131,7 +131,7 @@ graph LR
 
 5. Exit the session (press **`Ctrl-C` twice**), then look at the sandbox's network activity:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx policy log mcp
     ```
 
@@ -146,7 +146,7 @@ Before switching DevBoard's Dockerfiles to the hardened images, measure what you
 
 1. Scan the two current base images and the two hardened images the agent suggested, with the kit's `scan-images` helper. `sbx exec` starts the sandbox again if it's stopped:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx exec mcp scan-images python:3.12-slim dhi.io/python:3.12 node:22-alpine dhi.io/node:22-alpine
     ```
 
@@ -165,7 +165,7 @@ Before switching DevBoard's Dockerfiles to the hardened images, measure what you
 
 2. See what the scanner reached:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx policy log mcp
     ```
 

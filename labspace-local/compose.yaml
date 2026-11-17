@@ -3,7 +3,7 @@
 # Start it with ./start.sh, which also starts the bridge and sets LABSPACE_TOKEN.
 services:
   interface:
-    image: dockersamples/labspace-interface:latest
+    image: ${LABSPACE_INTERFACE_IMAGE:-dockersamples/labspace-interface:latest}
     ports:
       - "127.0.0.1:3030:3030"
     environment:
@@ -17,7 +17,11 @@ services:
       # Already set by Docker Desktop; needed on Docker Engine for Linux
       - host.docker.internal:host-gateway
     volumes:
-      - ../instructions:/labspace/instructions:ro
+      # instructions/ without the GitHub navigation footers, kept current by content.mjs --watch
+      - ./.content:/labspace/instructions:ro
       - ./metadata.json:/etc/labspace-support/metadata/metadata.json:ro
       # Read at start-up by the VS Code workspace service, which the ttyd mode doesn't use
       - ./unused-signing.key:/etc/labspace-support/private-key/labspace.key:ro
+      # The look of the simulated lab (simspace/): the image's index.html, which also loads theme.css and the
+      # header and milestones of labspace-ui.js, served from .content (see start.sh and content.mjs)
+      - ./.ui/index.html:/usr/local/app/public/index.html:ro

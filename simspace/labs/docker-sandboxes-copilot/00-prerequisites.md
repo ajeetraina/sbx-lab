@@ -52,7 +52,19 @@ Every exercise depends on `sbx` running correctly on your computer.
 
     Every policy should have `local` as its `SOURCE` (or `kit`, for a policy that applies to a single sandbox). If you see policies from any other source, your organization restricts what sandboxes can do and some exercises may not work: use a personal Docker account or ask your administrator.
 
-5. Download the two sandbox images the lab uses by creating, then removing, a sandbox of each kind:
+5. Clone the lab repository and move into it:
+
+    ```bash
+    git clone https://github.com/mathieu-benoit/sbx-lab
+    ```
+
+    ```bash
+    cd sbx-lab
+    ```
+
+    You commit the agents' work locally during the lab, but you never push it, so you don't need a fork.
+
+6. From the root of the repository, download the two sandbox images the lab uses by creating, then removing, a sandbox of each kind:
 
     ```bash
     sbx create --name warmup-shell shell .
