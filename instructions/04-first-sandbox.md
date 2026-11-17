@@ -146,7 +146,7 @@ Before you hand this sandbox to an agent that runs without asking for confirmati
 1. With the sandbox created, start an agent in it and attach to it:
 
     ```bash
-    sbx run --name quickstart
+    sbx run copilot --name quickstart
     ```
 
     Docker Sandboxes starts Copilot with `--yolo` by default and trusts the workspace directory. This lets Copilot work in the project without asking for confirmation at every step; you do not need to add the flag yourself.
@@ -176,6 +176,6 @@ Before you hand this sandbox to an agent that runs without asking for confirmati
 Go ahead and exit the session by pressing **`Ctrl-C` twice**.
 
 > [!NOTE]
-> A sandbox **stops shortly after its last agent session ends**, and anything running inside it (containers, servers) stops with it. Files and installed packages stay. You'll rely on this in the Docker and port forwarding modules; to bring a sandbox back without opening a session, run `sbx run --detach --name quickstart`.
+> A sandbox **stops shortly after its last agent session ends**, and anything running inside it (containers, servers) stops with it. Files and installed packages stay. You'll rely on this in the Docker and port forwarding modules; to bring a sandbox back without opening a session, run `sbx run copilot --detach --name quickstart`.
 
 [[<< Previous: Secrets and credentials](03-secrets-credentials.md) | [Next >> TUI dashboard](05-tui-dashboard.md)]

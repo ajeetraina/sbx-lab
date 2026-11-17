@@ -109,7 +109,7 @@ graph LR
 4. Start an agent in the `mcp` sandbox:
 
     ```bash terminal-id=terminal-2
-    sbx run --name mcp
+    sbx run copilot --name mcp
     ```
 
     Then give it this prompt:

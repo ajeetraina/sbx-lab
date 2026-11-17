@@ -204,7 +204,7 @@ The `Rule` line names the rule that allowed the request: it's the ID that `sbx p
 Reconnect to the sandbox:
 
 ```bash
-sbx run --name shell-demo
+sbx run shell --name shell-demo
 ```
 
 Once in the sandbox, try to reach `docker.com` again, showing only the response headers:

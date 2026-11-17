@@ -43,7 +43,7 @@ graph LR
 1. Reconnect to your sandbox from the `project` directory:
 
     ```bash
-    sbx run --name quickstart
+    sbx run copilot --name quickstart
     ```
 
 2. Run the existing test suite by giving your agent the following prompt:

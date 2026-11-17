@@ -53,7 +53,7 @@ graph LR
 
     ```bash
     cd project
-    sbx run --name quickstart
+    sbx run copilot --name quickstart
     ```
 
 2. Give your agent the following prompt:
@@ -95,7 +95,7 @@ graph LR
     > A sandbox stops when no agent session is attached to it, and its containers and published ports go with it. If you exit the session (`Ctrl-C` twice), restart the sandbox without opening a new session:
     >
     > ```bash
-    > sbx run --detach --name quickstart
+    > sbx run copilot --detach --name quickstart
     > ```
     >
     > The Compose services restart on their own within a few seconds, and published ports are restored.

@@ -97,7 +97,7 @@ graph LR
 > Services inside the sandbox must listen on `0.0.0.0`, not `127.0.0.1`. Many development servers default to `127.0.0.1`, which is why the prompt in the previous module explicitly asks the agent to bind to `0.0.0.0`.
 
 > [!IMPORTANT]
-> Ports are only reachable while the sandbox is running. A sandbox stops when no agent session is attached, so keep your agent session open, or start it without a session with `sbx run --detach --name quickstart`. Published ports are restored when the sandbox restarts: while it is stopped, `sbx port ls quickstart` shows `No published ports`, and the list comes back once it runs again.
+> Ports are only reachable while the sandbox is running. A sandbox stops when no agent session is attached, so keep your agent session open, or start it without a session with `sbx run copilot --detach --name quickstart`. Published ports are restored when the sandbox restarts: while it is stopped, `sbx port ls quickstart` shows `No published ports`, and the list comes back once it runs again.
 
 ## Publish a port from a kit
 
