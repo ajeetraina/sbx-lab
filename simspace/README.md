@@ -55,17 +55,7 @@ Edit the files under `labs/docker-sandboxes-copilot/` and refresh the browser:
 
 ## Deploy
 
-**GitHub Pages.** The workflows of the template live at the root of a repository, so to publish this folder, add two workflows to the root [`.github/workflows/`](../.github/workflows) of this repository, from the [template](https://github.com/dockersamples/simspace-starter/tree/main/.github/workflows), and point them at this folder:
-
-```yaml
-jobs:
-  deploy:
-    uses: dockersamples/simspace/.github/workflows/deploy-lab.yml@main
-    with:
-      labs-dir: simspace/labs
-```
-
-For `validate.yml`, mount `simspace/labs` instead of `labs`. Then enable Pages (Settings → Pages → Source: "GitHub Actions"). These workflows aren't added here, because they change the repository's CI.
+**GitHub Pages.** The [`pages`](../.github/workflows/pages.yaml) workflow publishes this folder at the root of the repository's Pages site, on every push to `main` that changes it, with the steps of the template's reusable [`deploy-lab.yml`](https://github.com/dockersamples/simspace/blob/main/.github/workflows/deploy-lab.yml): validate the labs, take the runtime image's payload, add the labs and generate `labs.json`. They are inlined rather than called, because the same site also holds the static preview of the Labspace rendering, in `labspace/` (see [`../labspace-local`](../labspace-local)), and a repository has a single Pages site. Enable Pages first (Settings → Pages → Source: "GitHub Actions").
 
 **As a container.** The [`Dockerfile`](Dockerfile) serves the labs:
 

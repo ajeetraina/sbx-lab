@@ -94,11 +94,11 @@ The bridge types commands into your shell, so it only accepts what the Labspace 
 
 [`static/build.mjs`](static/build.mjs) builds the same interface as a static site, to see the rendering without
 running anything: no container and no bridge. The right panel is a preview that shows what the **Run** and
-**Save** buttons would do. The [`labspace-pages`](../.github/workflows/labspace-pages.yaml) workflow publishes it
-to GitHub Pages.
+**Save** buttons would do. The [`pages`](../.github/workflows/pages.yaml) workflow publishes it to GitHub Pages in
+`labspace/`, next to the simulated lab at the root of the site (`https://<owner>.github.io/sbx-lab/labspace/`).
 
 ```bash
-node labspace-local/static/build.mjs --base /sbx-lab/ --out _site
+node labspace-local/static/build.mjs --base /sbx-lab/labspace/ --out _site/labspace
 ```
 
 It builds the interface client from `dockersamples/labspace-infra` at a pinned commit, with small patches (base path,
