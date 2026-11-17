@@ -6,7 +6,7 @@ name: labspace-pages
 # single Pages site, so this replaces the simspace site of simspace-deploy.yaml if both run.
 on:
   push:
-    branches: [labspace-local-terminal]
+    branches: [main]
     paths:
       - "instructions/**"
       - "labspace-local/static/**"
