@@ -59,7 +59,7 @@ graph LR
   - It removes the navigation footer of each module (`[[<< Previous: …] | [Next >> …]]`): the Labspace has its own
     Previous/Next buttons.
   - It keeps the Run and Copy buttons for what you run or type: `bash` blocks are commands (Run and Copy), `console`
-    blocks are prompts for the agent (Copy only) or, when they start with a table header, outputs (no button), and
+    blocks are prompts for the agent (Run and Copy) or, when they start with a table header, outputs (no button), and
     `none`, `yaml` or `dockerfile` blocks are outputs or files to read (no button).
   - It writes `labspace-ui.json`, the sections and milestones for the header and the milestones card.
 - **Look of the simulated lab**: [`theme.css`](theme.css) gives the Labspace interface the look of the simulated lab in
@@ -72,7 +72,9 @@ graph LR
   (in `.ui/`, mounted in the container) and serves them from `.content/`; the static build adds them too. The bridge's
   terminal pane takes the look of the simulated lab's terminals.
 - **Bridge** ([`bridge/server.js`](bridge/server.js)): a small Node.js server on your machine. It serves the terminal
-  page (xterm.js), runs one shell per tab with node-pty, and implements the two endpoints the interface calls.
+  page (xterm.js), runs one shell per tab with node-pty, and implements the two endpoints the interface calls. When
+  the program in the terminal accepts bracketed paste (zsh at its prompt, Copilot in an agent session), Run pastes the
+  block whole, then presses Enter: a multi-line prompt reaches the agent as one message.
 - [`../instructions/labspace.yaml`](../instructions/labspace.yaml) lists the sections.
 
 ### Security

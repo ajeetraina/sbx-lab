@@ -5,8 +5,8 @@
 //     [[<< Previous: Kits](02-kits.md) | [Next >> Agent sandbox](04-first-sandbox.md)]
 //   The Labspace has its own Previous/Next buttons, and these links would open the raw Markdown,
 //   so the footer is removed.
-// - Code blocks get Run and Copy buttons only when they are something to run or to type:
-//   outputs and file listings get none, and prompts for the agent can be copied, not run.
+// - Code blocks get Run and Copy buttons only when they are something to run or to type (commands,
+//   and prompts for the agent): outputs and file listings get none.
 // - labspace-ui.json carries what the header and the milestones need (labspace-ui.js).
 //
 //   node labspace-local/content.mjs <out-dir> [--watch]
@@ -29,7 +29,7 @@ export function stripFooter(markdown) {
 
 // A `console` block is either the output of a command, a table such as
 //   HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL
-// or a prompt for the agent (sentences).
+// or a prompt for the agent (sentences), which Run types into the agent session.
 const TABLE_HEADER = /^[A-Z][A-Z0-9 _-]*[A-Z0-9](\s{2,}\S|$)/;
 
 function blockOptions(language, firstLine) {
@@ -39,7 +39,7 @@ function blockOptions(language, firstLine) {
     case "shell":
       return []; // a command: Run and Copy
     case "console":
-      return TABLE_HEADER.test(firstLine) ? ["no-run-button", "no-copy-button"] : ["no-run-button"];
+      return TABLE_HEADER.test(firstLine) ? ["no-run-button", "no-copy-button"] : [];
     case "mermaid":
       return []; // rendered as a diagram
     default:
