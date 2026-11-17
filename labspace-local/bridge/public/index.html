@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local terminal</title>
+  <link rel="stylesheet" href="/xterm.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap">
+  <style>
+    /* The terminal pane of the simulated lab (simspace/): TerminalPanel.scss and its mock terminal */
+    :root { --bg: #0d1117; --bar: #161b22; --bar-border: #30363d; --active: #2560ff; --fg: #d1d5da; --dim: #6e7681; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 14px Inter, Helvetica, Arial, sans-serif; }
+    body { display: flex; flex-direction: column; }
+    #bar { display: flex; align-items: flex-end; gap: 0.5rem; padding: 0.4rem 0.5rem 0; background: var(--bar); border-bottom: 1px solid var(--bar-border); overflow-x: auto; flex: none; }
+    .tab { display: flex; align-items: center; gap: 0.25rem; padding: 0.3rem 0.75rem; border: none; border-radius: 0.375rem 0.375rem 0 0; background: transparent; color: #fff; font: inherit; font-size: 0.72rem; line-height: 1.5; opacity: 0.65; cursor: pointer; white-space: nowrap; transition: opacity 0.15s ease, background 0.15s ease; }
+    .tab:hover { opacity: 0.9; }
+    .tab.active { background: var(--active); opacity: 1; }
+    .tab svg { width: 0.9rem; height: 0.9rem; flex: none; }
+    .tab .x { margin-left: 0.5rem; font-size: 0.8rem; opacity: 0.8; }
+    .tab .x:hover { opacity: 1; }
+    #status { margin-left: auto; align-self: center; padding: 0 0.25rem 0.4rem 0.5rem; color: #adbac7; font-size: 0.72rem; white-space: nowrap; }
+    #terms { position: relative; flex: 1; min-height: 0; }
+    .term { position: absolute; inset: 0; padding: 12px 0 0 14px; display: none; }
+    .term.active { display: block; }
+  </style>
+</head>
+<body>
+  <div id="bar"><button id="add" class="tab" title="New terminal">+</button><span id="status">connecting…</span></div>
+  <div id="terms"></div>
+  <script src="/xterm.js"></script>
+  <script src="/addon-fit.js"></script>
+  <script>
+    const bar = document.getElementById("bar");
+    const addBtn = document.getElementById("add");
+    const status = document.getElementById("status");
+    const container = document.getElementById("terms");
+    const tabs = new Map(); // id -> { term, fit, el, tabEl }
+    let active = null;
+    let ws;
+    // Material Symbols "terminal", as on the simulated lab's tabs
+    const TERMINAL_ICON = '<svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-400H160v400Zm140-40-56-56 103-104-104-104 57-56 160 160-160 160Zm180 0v-80h240v80H480Z"/></svg>';
+
+    function sendMsg(msg) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg)); }
+
+    function createTab(id) {
+      if (tabs.has(id)) return tabs.get(id);
+      const el = document.createElement("div");
+      el.className = "term";
+      container.appendChild(el);
+      const term = new Terminal({
+        cursorBlink: true, scrollback: 5000, fontSize: 13.5, lineHeight: 1.25,
+        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
+        theme: { background: "#0d1117", foreground: "#d1d5da", cursor: "#d1d5da", selectionBackground: "#2560ff66" },
+      });
+      const fit = new FitAddon.FitAddon();
+      term.loadAddon(fit);
+      term.open(el);
+      // While old output is replayed, xterm.js answers the terminal queries it contains again:
+      // those answers are not for the shell, drop them.
+      term.onData((data) => { if (!entry.replaying) sendMsg({ t: "in", id, data }); });
+
+      const tabEl = document.createElement("button");
+      tabEl.className = "tab";
+      tabEl.innerHTML = `${TERMINAL_ICON}<span></span><span class="x" title="Close">×</span>`;
+      tabEl.querySelector("span").textContent = /^terminal-\d+$/.test(id) ? `Terminal ${id.split("-")[1]}` : id;
+      tabEl.onclick = (e) => {
+        if (e.target.classList.contains("x")) sendMsg({ t: "close", id });
+        else focusTab(id);
+      };
+      bar.insertBefore(tabEl, addBtn);
+
+      const entry = { term, fit, el, tabEl, replaying: false };
+      tabs.set(id, entry);
+      return entry;
+    }
+
+    function removeTab(id) {
+      const entry = tabs.get(id);
+      if (!entry) return;
+      entry.term.dispose();
+      entry.el.remove();
+      entry.tabEl.remove();
+      tabs.delete(id);
+      if (active === id) active = null;
+    }
+
+    function resize(id) {
+      const entry = tabs.get(id);
+      if (!entry || id !== active) return;
+      entry.fit.fit();
+      sendMsg({ t: "resize", id, cols: entry.term.cols, rows: entry.term.rows });
+    }
+
+    function focusTab(id) {
+      const entry = tabs.get(id);
+      if (!entry) return;
+      for (const [other, e] of tabs) {
+        e.el.classList.toggle("active", other === id);
+        e.tabEl.classList.toggle("active", other === id);
+      }
+      active = id;
+      resize(id);
+      entry.term.focus();
+    }
+
+    addBtn.onclick = () => {
+      let n = 2;
+      while (tabs.has(`terminal-${n}`)) n++;
+      sendMsg({ t: "open", id: `terminal-${n}` });
+    };
+
+    function connect() {
+      ws = new WebSocket(`ws://${location.host}/ws`);
+      ws.onopen = () => { status.textContent = "this machine"; };
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.t === "list") {
+          for (const id of msg.ids) createTab(id);
+          for (const id of [...tabs.keys()]) if (!msg.ids.includes(id)) removeTab(id);
+          if (msg.focus && tabs.has(msg.focus)) focusTab(msg.focus);
+          else if (!active && msg.ids.length) focusTab(msg.ids[0]);
+        } else if (msg.t === "out") {
+          const entry = createTab(msg.id);
+          if (msg.replay) {
+            entry.replaying = true;
+            entry.term.write(msg.data, () => { entry.replaying = false; });
+          } else {
+            entry.term.write(msg.data);
+          }
+        } else if (msg.t === "focus") {
+          focusTab(msg.id);
+        }
+      };
+      ws.onclose = () => {
+        status.textContent = "disconnected, retrying…";
+        for (const id of [...tabs.keys()]) removeTab(id);
+        setTimeout(connect, 1500);
+      };
+    }
+
+    // Only one page sends input to the shells (see server.js): the one you use takes over.
+    for (const type of ["keydown", "mousedown", "focus"]) {
+      window.addEventListener(type, () => sendMsg({ t: "claim" }), true);
+    }
+
+    new ResizeObserver(() => active && resize(active)).observe(container);
+    connect();
+  </script>
+</body>
+</html>

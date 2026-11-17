@@ -1,0 +1,9 @@
+{
+  "analytics_enabled": false,
+  "labspace_id": "mathieu-benoit/sbx-lab",
+  "labspace_mode": "local-terminal",
+  "uuids": { "hub": null, "dd": null },
+  "infra_version": "local",
+  "source_repo": "github.com/mathieu-benoit/sbx-lab",
+  "content_version": "local"
+}

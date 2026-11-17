@@ -11,7 +11,7 @@ catalog:
 
 # Bump this whenever you add, remove or rename steps: stored progress is
 # namespaced per version, so stale completion records are cleared.
-version: "1.0.0"
+version: "1.1.0"
 
 # Command behaviour lives in simulator.yaml (relative to this file).
 simulator: simulator.yaml
@@ -49,6 +49,8 @@ sections:
         title: "Run sbx diagnose"
       - id: check-policies
         title: "Check that your policies are local"
+      - id: clone-repo
+        title: "Clone the lab repository"
       - id: warm-up
         title: "Warm up the sandbox images"
 

@@ -43,6 +43,7 @@ state:
     blocked: false            # shell-demo hit the proxy
   quickstart:
     pasteTried: false
+  cloned: false               # the prerequisites' git clone ran (the files are always there)
   repo:                       # what is in YOUR repository on the host
     paginationCommitted: false
     fixFetched: false
@@ -97,6 +98,45 @@ scenarios:
       command: [cd]
       args:
         0: ".."
+    then:
+      state: { cwd: root }
+
+  # The prerequisites clone the lab. The simulated machine already holds the
+  # repository (the seed files), so `git clone` only shows the output once, and
+  # `cd sbx-lab` lands in its root.
+  - id: git-clone-again
+    when:
+      command: [git, clone]
+      args:
+        0: "https://github.com/mathieu-benoit/sbx-lab"
+      state: { cloned: true }
+    then:
+      stderr:
+        - "fatal: destination path 'sbx-lab' already exists and is not an empty directory."
+      exit: 128
+
+  - id: git-clone
+    completes: clone-repo
+    when:
+      command: [git, clone]
+      args:
+        0: "https://github.com/mathieu-benoit/sbx-lab"
+    then:
+      state: { cloned: true }
+      output:
+        - "Cloning into 'sbx-lab'..."
+        - "remote: Enumerating objects: 698, done."
+        - "remote: Counting objects: 100% (172/172), done."
+        - "remote: Compressing objects: 100% (125/125), done."
+        - "remote: Total 698 (delta 79), reused 92 (delta 45), pack-reused 526 (from 1)"
+        - { text: "Receiving objects: 100% (698/698), 322.05 KiB | 4.35 MiB/s, done.", delay: pull }
+        - "Resolving deltas: 100% (404/404), done."
+
+  - id: cd-sbx-lab
+    when:
+      command: [cd]
+      args:
+        0: "sbx-lab"
     then:
       state: { cwd: root }
 
@@ -169,9 +209,22 @@ scenarios:
     then:
       state: { sandboxes.warmupShell: true }
       output:
-        - "Pulling the shell sandbox image..."
-        - { text: "  docker.io/sbx/shell: Pull complete", delay: pull }
-        - "✓ Created sandbox 'warmup-shell'"
+        - "  ○ shell — now ships as a kit; resolving docker.io/sbx/shell:latest"
+        - ""
+        - "SANDBOX"
+        - "  Name:       warmup-shell"
+        - "  Agent:      shell"
+        - "  Kit:        docker.io/sbx/shell@sha256:89ed5d63def6bfb2373d408e3ab6ad55aa5c010f884a182a78299fcf85ea42d1"
+        - "  Workspace:  ~/sbx-lab (rw)"
+        - "  Image:      docker.io/sbx/shell@sha256:89ed5d63def6bfb2373d408e3ab6ad55aa5c010f884a182a78299fcf85ea42d1"
+        - "  CPU:        8"
+        - "  Memory:     16 GiB"
+        - ""
+        - "IMAGE"
+        - { text: "  ✓ image — ready", delay: pull }
+        - ""
+        - "  ✓ Created sandbox warmup-shell"
+        - "      try: sbx run --name warmup-shell"
 
   - id: sbx-create-warmup-copilot
     when:
@@ -181,9 +234,25 @@ scenarios:
     then:
       state: { sandboxes.warmupCopilot: true }
       output:
-        - "Pulling the copilot sandbox image..."
-        - { text: "  docker.io/sbx/copilot: Pull complete", delay: pull }
-        - "✓ Created sandbox 'warmup-copilot'"
+        - "  ○ copilot — now ships as a kit; resolving docker.io/sbx/copilot:latest"
+        - ""
+        - "SANDBOX"
+        - "  Name:       warmup-copilot"
+        - "  Agent:      copilot"
+        - "  Kit:        docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
+        - "  Workspace:  ~/sbx-lab (rw)"
+        - "  Skills:     0 entries · linked, read-only"
+        - "    Source:   ~/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills"
+        - "    Target:   /home/agent/.copilot/skills"
+        - "  Image:      docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
+        - "  CPU:        8"
+        - "  Memory:     16 GiB"
+        - ""
+        - "IMAGE"
+        - { text: "  ✓ image — ready", delay: pull }
+        - ""
+        - "  ✓ Created sandbox warmup-copilot"
+        - "      try: sbx run --name warmup-copilot"
 
   # `--force` swallows the first name as its value (see the flag parser), so the
   # command arrives as: sbx rm warmup-copilot  with force=warmup-shell.
@@ -359,7 +428,7 @@ scenarios:
         - "    Allowed:     docker.com:443"
         - "    Governance:  Local policy only"
         - "    Context:     global"
-        - "    Rule:        e3246d5b-cb8e-42d5-879d-45efeb4b2a4a"
+        - "    Rule:        f652c735-f8f6-4a6b-9b9e-51ebc6d52545"
 
   - id: policy-check-docker-denied
     completes: check-denied
@@ -385,7 +454,7 @@ scenarios:
         - "    Allowed:     api.github.com:443"
         - "    Governance:  Local policy only"
         - "    Context:     global"
-        - "    Rule:        d8f47e3e-127e-4482-beae-962d8e5d5e16"
+        - "    Rule:        c2185734-ea42-4f5d-b083-a2266ca721a5"
 
   - id: policy-check-copilot
     when:
@@ -398,7 +467,7 @@ scenarios:
         - "    Allowed:     api.individual.githubcopilot.com:443"
         - "    Governance:  Local policy only"
         - "    Context:     global"
-        - "    Rule:        0dc17953-5c26-4303-b203-31952255d03d"
+        - "    Rule:        b9b155c9-49aa-4131-96b1-bc2d7e2ac1b1"
 
   - id: policy-check-any
     when:
@@ -421,7 +490,8 @@ scenarios:
         0: "docker.com"
     then:
       state: { policy.dockerAllowed: true }
-      output: ["✓ Added allow rule: docker.com"]
+      output:
+        - "  Added rule f652c735-f8f6-4a6b-9b9e-51ebc6d52545 to policy local (scope: global): docker.com [tcp]"
 
   - id: policy-allow-github
     completes: allow-github
@@ -432,9 +502,9 @@ scenarios:
     then:
       state: { rules.github: true }
       output:
-        - "✓ Added allow rule: github.com"
-        - "✓ Added allow rule: **.github.com"
-        - "✓ Added allow rule: **.githubcopilot.com"
+        - "  Added rule dda4bd8b-3f33-4d3b-97a8-b19796285f2c to policy local (scope: global): github.com [tcp]"
+        - "  Added rule c2185734-ea42-4f5d-b083-a2266ca721a5 to policy local (scope: global): **.github.com [tcp]"
+        - "  Added rule b9b155c9-49aa-4131-96b1-bc2d7e2ac1b1 to policy local (scope: global): **.githubcopilot.com [tcp]"
 
   - id: policy-allow-python
     completes: allow-python
@@ -445,10 +515,10 @@ scenarios:
     then:
       state: { rules.python: true }
       output:
-        - "✓ Added allow rule: deb.debian.org"
-        - "✓ Added allow rule: dhi.io"
-        - "✓ Added allow rule: pypi.org"
-        - "✓ Added allow rule: files.pythonhosted.org"
+        - "  Added rule ddbffc51-658f-4440-9b21-04fe6d64e05c to policy local (scope: global): deb.debian.org [tcp]"
+        - "  Added rule 65162871-96bf-4d91-ac62-13790f32214d to policy local (scope: global): dhi.io [tcp]"
+        - "  Added rule 49133bd8-43e7-4195-bb9e-59294b13a0df to policy local (scope: global): pypi.org [tcp]"
+        - "  Added rule 5e799db9-4b4a-4ea0-9a46-912847ccb08c to policy local (scope: global): files.pythonhosted.org [tcp]"
 
   - id: policy-allow-docker-hub
     completes: allow-docker-hub
@@ -459,8 +529,8 @@ scenarios:
     then:
       state: { rules.dockerhub: true }
       output:
-        - "✓ Added allow rule: **.docker.io"
-        - "✓ Added allow rule: production.cloudfront.docker.com"
+        - "  Added rule 0f8cabf0-64bd-4c9d-aee6-d5d18d205f8f to policy local (scope: global): **.docker.io [tcp]"
+        - "  Added rule e09d8452-9f1f-49a9-a8ed-09bf90606714 to policy local (scope: global): production.cloudfront.docker.com [tcp]"
 
   - id: policy-allow-npm
     completes: allow-npm
@@ -470,7 +540,8 @@ scenarios:
         0: "registry.npmjs.org"
     then:
       state: { rules.npm: true }
-      output: ["✓ Added allow rule: registry.npmjs.org"]
+      output:
+        - "  Added rule 9f487778-51f3-45e9-b154-0a75b3118ff3 to policy local (scope: global): registry.npmjs.org [tcp]"
 
   - id: policy-allow-any
     when:
@@ -478,7 +549,8 @@ scenarios:
       args:
         0: { any: true }
     then:
-      output: ["✓ Added allow rule: {{ args.0 }}"]
+      output:
+        - "  Added rule 00adf6c6-bb88-40db-9bb3-c02e5578c665 to policy local (scope: global): {{ args.0 }} [tcp]"
 
   - id: policy-deny-any
     when:
@@ -487,9 +559,10 @@ scenarios:
         0: { any: true }
     then:
       state: { policy.adsDenied: true }
-      output: ["✓ Added deny rule: {{ args.0 }}"]
+      output:
+        - "  Added rule 25ef9968-9e47-4a60-a2ba-febeb9bf6dc2 to policy local (scope: global): {{ args.0 }} [tcp,udp]"
 
-  # Note: the real command asks for confirmation; the simulation doesn't.
+  # The real command asks for confirmation: the simulation shows the question, answered y.
   - id: policy-rm-docker
     completes: remove-rules
     when:
@@ -498,7 +571,10 @@ scenarios:
         --resource: "docker.com"
     then:
       state: { policy.dockerAllowed: false }
-      output: ["✓ Removed rule for docker.com"]
+      output:
+        - "  Remove network rules from global (resources=docker.com)? (y/N) y"
+        - ""
+        - "  Removed rule from policy local: resources=docker.com"
 
   - id: policy-rm-ads
     completes: remove-rules
@@ -508,7 +584,10 @@ scenarios:
         --resource: "ads.example.com"
     then:
       state: { policy.adsDenied: false }
-      output: ["✓ Removed rule for ads.example.com"]
+      output:
+        - "  Remove network rules from global (resources=ads.example.com)? (y/N) y"
+        - ""
+        - "  Removed rule from policy local: resources=ads.example.com"
 
   - id: policy-rm-any
     when:
@@ -516,7 +595,10 @@ scenarios:
       args:
         --resource: { any: true }
     then:
-      output: ["✓ Removed rule for {{ args.resource }}"]
+      output:
+        - "  Remove network rules from global (resources={{ args.resource }})? (y/N) y"
+        - ""
+        - "  Removed rule from policy local: resources={{ args.resource }}"
 
   # sbx policy log: one table per sandbox, abridged to the columns the lab needs.
   - id: policy-log-quickstart-paste
@@ -843,15 +925,45 @@ scenarios:
     then:
       state: { sandboxes.quickstart: true }
       output:
-        - "Creating sandbox 'quickstart'..."
-        - "  Kits:       docker.io/sbx/copilot@sha256:f9c2331f..."
+        - "  ○ copilot — now ships as a kit; resolving docker.io/sbx/copilot:latest"
+        - ""
+        - "SANDBOX"
+        - "  Name:       quickstart"
+        - "  Agent:      copilot"
+        - "  Kits:       docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
         - "              ./kits/python"
-        - "  Workspace:  /Users/you/sbx-lab/project"
-        - { text: "  ...", delay: short }
+        - "  Workspace:  ~/sbx-lab/project (rw)"
+        - "  Skills:     0 entries · linked, read-only"
+        - "    Source:   ~/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills"
+        - "    Target:   /home/agent/.copilot/skills"
+        - "  Image:      docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
+        - "  CPU:        8"
+        - "  Memory:     16 GiB"
+        - ""
+        - "IMAGE"
+        - { text: "  ✓ image — ready", delay: pull }
+        - ""
+        - "AGENT"
+        - "    assembling kit image from 2 kits"
+        - "    loading kit image docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
+        - "    loading kit image ~/sbx-lab/project/kits/python"
+        - "  ✓ assembled kit image (3 layers)"
+        - "    setting 2 environment variables"
+        - "      +COPILOT_GITHUB_TOKEN +GH_TOKEN"
         - "    running 3 install commands"
-        - "      ..."
-        - { text: "      $ Install Python 3, venv and pip (kit=python, user=0)", delay: pull }
-        - "✓ Created sandbox 'quickstart'"
+        - "      $ Ensure .copilot is owned by agent before bind mounts and th… (kit=copilot, user=0)"
+        - "      ✓ Ensure .copilot is owned by agent before bind mounts and th… (kit=copilot, user=0, 5ms)"
+        - "      $ Copilot config with trusted workspace folder (kit=copilot, user=agent)"
+        - "      ✓ Copilot config with trusted workspace folder (kit=copilot, user=agent, 6ms)"
+        - "      $ Install Python 3, venv and pip (kit=python, user=0)"
+        - { text: "      ✓ Install Python 3, venv and pip (kit=python, user=0, 6.1s)", delay: pull }
+        - "      view install logs: ls /var/log/sbx-kits"
+        - "    registering 1 startup command, run on every container start"
+        - "      ○ Register the sandbox MCP gateway in ~/.copilot/mcp-config.j… (kit=copilot, user=agent)"
+        - "      view startup log: cat /var/log/sbx-kit-startup.log"
+        - ""
+        - "  ✓ Created sandbox quickstart"
+        - "      try: sbx run --name quickstart"
 
   - id: create-mcp-no-server
     when:
@@ -885,14 +997,49 @@ scenarios:
     then:
       state: { sandboxes.mcp: true }
       output:
-        - "Building the kit './kits/trivy' (first time)..."
-        - { text: "  downloading trivy 0.70.0 and checking its SHA256... done", delay: pull }
-        - "Creating sandbox 'mcp'..."
-        - "  Kits:       docker.io/sbx/copilot@sha256:f9c2331f..."
+        - "  ○ copilot — now ships as a kit; resolving docker.io/sbx/copilot:latest"
+        - ""
+        - "KITS"
+        - "  ○ ./kits/trivy — building…"
+        - { text: "  ✓ ./kits/trivy — built (29s)", delay: pull }
+        - "      sbx-kit-src:trivy-767e12c61bd2"
+        - ""
+        - "SANDBOX"
+        - "  Name:       mcp"
+        - "  Agent:      copilot"
+        - "  Kits:       docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
         - "              ./kits/trivy"
-        - "  MCP:        dhi (static: the gateway starts with exactly this server)"
-        - "  Workspace:  /Users/you/sbx-lab/project"
-        - "✓ Created sandbox 'mcp'"
+        - "  MCP:        dhi (static)"
+        - "  Workspace:  ~/sbx-lab/project (rw)"
+        - "  Skills:     0 entries · linked, read-only"
+        - "    Source:   ~/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills"
+        - "    Target:   /home/agent/.copilot/skills"
+        - "  Image:      docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
+        - "  CPU:        8"
+        - "  Memory:     16 GiB"
+        - ""
+        - "IMAGE"
+        - { text: "  ✓ image — ready", delay: pull }
+        - ""
+        - "AGENT"
+        - "    assembling kit image from 2 kits"
+        - "    loading kit image docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
+        - "    loading kit image ~/sbx-lab/project/kits/trivy"
+        - "  ✓ assembled kit image (6 layers)"
+        - "    setting 2 environment variables"
+        - "      +COPILOT_GITHUB_TOKEN +GH_TOKEN"
+        - "    running 2 install commands"
+        - "      $ Ensure .copilot is owned by agent before bind mounts and th… (kit=copilot, user=0)"
+        - "      ✓ Ensure .copilot is owned by agent before bind mounts and th… (kit=copilot, user=0, 5ms)"
+        - "      $ Copilot config with trusted workspace folder (kit=copilot, user=agent)"
+        - "      ✓ Copilot config with trusted workspace folder (kit=copilot, user=agent, 6ms)"
+        - "      view install logs: ls /var/log/sbx-kits"
+        - "    registering 1 startup command, run on every container start"
+        - "      ○ Register the sandbox MCP gateway in ~/.copilot/mcp-config.j… (kit=copilot, user=agent)"
+        - "      view startup log: cat /var/log/sbx-kit-startup.log"
+        - ""
+        - "  ✓ Created sandbox mcp"
+        - "      try: sbx run --name mcp"
 
   # Abridged: the real `sbx inspect` prints about 25 lines; the module shows only the MCP ones.
   - id: inspect-mcp
@@ -917,12 +1064,48 @@ scenarios:
     then:
       state: { sandboxes.portsDemo: true }
       output:
-        - "Creating sandbox 'ports-demo'..."
-        - "  Kits:       docker.io/sbx/copilot@sha256:f9c2331f..."
+        - "  ○ copilot — now ships as a kit; resolving docker.io/sbx/copilot:latest"
+        - ""
+        - "SANDBOX"
+        - "  Name:       ports-demo"
+        - "  Agent:      copilot"
+        - "  Kits:       docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
         - "              ./kits/python"
         - "              ./kits/api-port"
-        - { text: "  Publishing sandbox port 8000 on 127.0.0.1:60000", delay: short }
-        - "✓ Created sandbox 'ports-demo'"
+        - "  Workspace:  ~/sbx-lab/project (rw)"
+        - "  Skills:     0 entries · linked, read-only"
+        - "    Source:   ~/Library/Application Support/com.docker.sandboxes/sandboxes/agent-skills"
+        - "    Target:   /home/agent/.copilot/skills"
+        - "  Image:      docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
+        - "  CPU:        8"
+        - "  Memory:     16 GiB"
+        - ""
+        - "IMAGE"
+        - { text: "  ✓ image — ready", delay: pull }
+        - ""
+        - "AGENT"
+        - "    assembling kit image from 3 kits"
+        - "    loading kit image docker.io/sbx/copilot@sha256:f9c2331f598f25fea00ffcceaf8100649158fcf854ad87a779828e4a4767311a"
+        - "    loading kit image ~/sbx-lab/project/kits/api-port"
+        - "    loading kit image ~/sbx-lab/project/kits/python"
+        - "  ✓ assembled kit image (4 layers)"
+        - "    setting 2 environment variables"
+        - "      +COPILOT_GITHUB_TOKEN +GH_TOKEN"
+        - "    running 3 install commands"
+        - "      $ Ensure .copilot is owned by agent before bind mounts and th… (kit=copilot, user=0)"
+        - "      ✓ Ensure .copilot is owned by agent before bind mounts and th… (kit=copilot, user=0, 5ms)"
+        - "      $ Copilot config with trusted workspace folder (kit=copilot, user=agent)"
+        - "      ✓ Copilot config with trusted workspace folder (kit=copilot, user=agent, 6ms)"
+        - "      $ Install Python 3, venv and pip (kit=python, user=0)"
+        - { text: "      ✓ Install Python 3, venv and pip (kit=python, user=0, 6.1s)", delay: pull }
+        - "      view install logs: ls /var/log/sbx-kits"
+        - "    registering 1 startup command, run on every container start"
+        - "      ○ Register the sandbox MCP gateway in ~/.copilot/mcp-config.j… (kit=copilot, user=agent)"
+        - "      view startup log: cat /var/log/sbx-kit-startup.log"
+        - { text: "  ✓ 8000/tcp4 — published localhost:60000 -> 8000/tcp4", delay: short }
+        - ""
+        - "  ✓ Created sandbox ports-demo"
+        - "      try: sbx run --name ports-demo"
 
   # sbx ls grows with the lab. One table per stage, picked by state.
   - id: ls-full

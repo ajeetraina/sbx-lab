@@ -43,7 +43,7 @@ graph LR
 
 1. With the Docker Compose stack from the previous module still running (the `quickstart` sandbox must be running: see `sbx ls`), run the following in a terminal on your host:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx port publish quickstart 8000:8000
     ```
 
@@ -55,7 +55,7 @@ graph LR
 
 1. Publish the sandbox's port 3000 on port 3001 of your host to reach the frontend:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx port publish quickstart 3001:3000
     ```
 
@@ -70,13 +70,13 @@ graph LR
 
 1. To list the ports published by a sandbox, run `sbx port ls` with the sandbox name:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx port ls quickstart
     ```
 
     The output looks similar to this:
 
-    ```console
+    ```console terminal-id=terminal-2
     HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL
     127.0.0.1   3001        3000           tcp4
     127.0.0.1   8000        8000           tcp4
@@ -84,7 +84,7 @@ graph LR
 
 2. To stop publishing a port, use `sbx port unpublish`:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx port unpublish quickstart 8000:8000
     ```
 
@@ -161,34 +161,40 @@ graph LR
 
 Try it in a separate sandbox, from the `project` directory, in another terminal. It takes a couple of minutes:
 
-1. Create a sandbox with the Python kit and the port kit:
+1. Go to the `project` directory:
 
-    ```bash
+    ```bash terminal-id=terminal-2
+    cd project
+    ```
+
+2. Create a sandbox with the Python kit and the port kit:
+
+    ```bash terminal-id=terminal-2
     sbx create --name ports-demo --kit ./kits/python --kit ./kits/api-port copilot .
     ```
 
-2. List its ports. You haven't published anything, yet port 8000 is already there, on a host port that `sbx` picked:
+3. List its ports. You haven't published anything, yet port 8000 is already there, on a host port that `sbx` picked:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx port ls ports-demo
     ```
 
-    ```console
+    ```console terminal-id=terminal-2
     HOST IP     HOST PORT   SANDBOX PORT   PROTOCOL
     127.0.0.1   60000       8000           tcp4
     ```
 
-3. Start a small web server on port 8000 in the sandbox. It serves the project folder:
+4. Start a small web server on port 8000 in the sandbox. It serves the project folder:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx exec ports-demo sh -c 'nohup python3 -m http.server 8000 >/dev/null 2>&1 &'
     ```
 
-4. Open `http://127.0.0.1:<HOST PORT>/`, with the host port from step 2: you see the files of the `project` folder, served from inside the sandbox.
+5. Open `http://127.0.0.1:<HOST PORT>/`, with the host port from step 3: you see the files of the `project` folder, served from inside the sandbox.
 
-5. Remove the sandbox:
+6. Remove the sandbox:
 
-    ```bash
+    ```bash terminal-id=terminal-2
     sbx rm --force ports-demo
     ```
 
