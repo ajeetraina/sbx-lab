@@ -57,6 +57,11 @@ graph LR
 - **Content** ([`content.mjs`](content.mjs)): copies `instructions/` to `.content/` without the navigation footer of
   each module (`[[<< Previous: …] | [Next >> …]]`), which the Labspace replaces with its own Previous/Next buttons, and
   keeps the copy current while the Labspace runs. The static build uses it too.
+- **Theme** ([`theme.css`](theme.css)): gives the Labspace interface the look of the simulated lab in
+  [`../simspace`](../simspace) (fonts, headings, inline code, alerts, code blocks, footer buttons), and the bridge's
+  terminal pane the look of its terminals. `start.sh` adds it to the image's own `index.html` (in `.ui/`), which it
+  mounts in the container; the static build adds it too. The simulated lab's header and milestones have no
+  equivalent in the Labspace interface.
 - **Bridge** ([`bridge/server.js`](bridge/server.js)): a small Node.js server on your machine. It serves the terminal
   page (xterm.js), runs one shell per tab with node-pty, and implements the two endpoints the interface calls.
 - [`../instructions/labspace.yaml`](../instructions/labspace.yaml) lists the sections.

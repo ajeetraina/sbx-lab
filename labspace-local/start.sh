@@ -11,6 +11,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 export BRIDGE_PORT="${BRIDGE_PORT:-8085}"
 url="http://localhost:3030"
+export LABSPACE_INTERFACE_IMAGE="${LABSPACE_INTERFACE_IMAGE:-dockersamples/labspace-interface:latest}"
 
 command -v node >/dev/null || { echo "Node.js 20+ is required for the bridge." >&2; exit 1; }
 command -v docker >/dev/null || { echo "Docker is required for the Labspace interface." >&2; exit 1; }
@@ -30,6 +31,12 @@ open_browser() {
   elif command -v xdg-open >/dev/null; then xdg-open "$url" >/dev/null 2>&1
   fi
 }
+
+# The interface's own index.html, with theme.css added: it gives the Labspace the look of the
+# simulated lab. Taken from the image, so it always matches the image's assets.
+docker image inspect "$LABSPACE_INTERFACE_IMAGE" >/dev/null 2>&1 || docker pull -q "$LABSPACE_INTERFACE_IMAGE" >/dev/null
+docker run --rm --entrypoint /bin/cat "$LABSPACE_INTERFACE_IMAGE" /usr/local/app/public/index.html \
+  | node "$here/content.mjs" --themed-index "$here/.ui/index.html"
 
 # Already running? Then the bridge answers its health check: keep it and its shells, make sure the
 # interface is up (Compose leaves it alone when nothing changed), and leave the running start in

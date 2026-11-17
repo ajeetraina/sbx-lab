@@ -15,7 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { stripFooter } from "../content.mjs";
+import { stripFooter, withTheme } from "../content.mjs";
 
 const LABSPACE_INFRA = "https://github.com/dockersamples/labspace-infra.git";
 const LABSPACE_INFRA_COMMIT = "83f3c262cb68dfcf0d8b77066565fdb20d7ef2b1";
@@ -107,6 +107,9 @@ fs.copyFileSync(path.join(here, "terminal.html"), path.join(out, "terminal.html"
 const indexFile = path.join(out, "index.html");
 const shimTag = `<script src="${base}labspace-shim.js" data-base="${base}"></script>`;
 patch(indexFile, '<script type="module"', `${shimTag}\n    <script type="module"`);
+// The look of the simulated lab (simspace/)
+fs.copyFileSync(path.join(here, "..", "theme.css"), path.join(out, "labspace-theme.css"));
+fs.writeFileSync(indexFile, withTheme(fs.readFileSync(indexFile, "utf8"), `${base}labspace-theme.css`));
 // GitHub Pages serves 404.html for unknown paths: deep links to a section still load the app
 fs.copyFileSync(indexFile, path.join(out, "404.html"));
 fs.writeFileSync(path.join(out, ".nojekyll"), "");

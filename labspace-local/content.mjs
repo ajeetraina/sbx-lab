@@ -7,6 +7,7 @@
 // so the footer is removed. Everything else is copied as is.
 //
 //   node labspace-local/content.mjs <out-dir> [--watch]
+//   node labspace-local/content.mjs --themed-index <out-file> < index.html
 
 import fs from "node:fs";
 import path from "node:path";
@@ -22,6 +23,14 @@ export function stripFooter(markdown) {
   return markdown.replace(FOOTER, "").replace(/\s+$/, "\n");
 }
 
+// The interface's index.html with the theme (theme.css) loaded after its own stylesheet
+export function withTheme(html, href) {
+  const tag = `<link rel="stylesheet" href="${href}">`;
+  if (html.includes(tag)) return html;
+  if (!html.includes("</head>")) throw new Error("index.html has no </head>");
+  return html.replace("</head>", `  ${tag}\n  </head>`);
+}
+
 export function writeContent(outDir) {
   fs.mkdirSync(outDir, { recursive: true });
   for (const entry of fs.readdirSync(instructionsDir, { withFileTypes: true })) {
@@ -33,7 +42,12 @@ export function writeContent(outDir) {
   }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) && process.argv[2] === "--themed-index") {
+  // node content.mjs --themed-index <out-file> < index.html
+  const html = fs.readFileSync(0, "utf8");
+  fs.mkdirSync(path.dirname(process.argv[3]), { recursive: true });
+  fs.writeFileSync(process.argv[3], withTheme(html, "/labspace-theme.css"));
+} else if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const outDir = process.argv[2];
   if (!outDir) {
     console.error("usage: node content.mjs <out-dir> [--watch]");

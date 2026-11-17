@@ -1,0 +1,271 @@
+/*
+ * Brings the Labspace interface (Bootstrap) close to the look of the simulated lab in simspace/,
+ * so that the two renderings of the lab read the same. Values come from the simspace runtime
+ * (dockersamples/simspace, app/packages/labspace: WorkshopPanel.scss and CodeBlock.scss).
+ * Loaded after the interface's own stylesheet, in the local Labspace and in the static build.
+ */
+
+:root {
+  --wp-accent: #2560ff;
+  --wp-accent-soft: rgba(37, 96, 255, 0.1);
+  --wp-bg: #ffffff;
+  --wp-surface: #f6f8fc;
+  --wp-text: #1b2130;
+  --wp-text-muted: #64708a;
+  --wp-heading: #0d1220;
+  --wp-border: #e7ebf3;
+  --wp-code-inline-bg: rgba(37, 96, 255, 0.08);
+  --wp-code-inline-text: #1746c4;
+  --wp-alert-note: #2560ff;
+  --wp-alert-tip: #1a7f37;
+  --wp-alert-important: #8250df;
+  --wp-alert-warning: #9a6700;
+  --wp-alert-caution: #cf222e;
+}
+
+[data-bs-theme="dark"] {
+  --wp-accent: #5b86ff;
+  --wp-accent-soft: rgba(91, 134, 255, 0.16);
+  --wp-bg: #0d1017;
+  --wp-surface: #161b25;
+  --wp-text: #ced4e0;
+  --wp-text-muted: #8794ab;
+  --wp-heading: #f2f5fa;
+  --wp-border: #232a37;
+  --wp-code-inline-bg: rgba(91, 134, 255, 0.16);
+  --wp-code-inline-text: #a8c0ff;
+  --wp-alert-note: #5b86ff;
+  --wp-alert-tip: #3fb950;
+  --wp-alert-important: #a371f7;
+  --wp-alert-warning: #d29922;
+  --wp-alert-caution: #f85149;
+}
+
+body {
+  font-family: Inter, Helvetica, Arial, sans-serif;
+}
+
+/* ------------------------------------------------------------------ instructions pane */
+
+.overflow-auto:has(> .workshop-body) {
+  background: var(--wp-bg);
+}
+
+.workshop-body {
+  max-width: 760px;
+  margin: 0 auto 2rem;
+  padding: 28px 32px 48px !important;
+  color: var(--wp-text);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.workshop-body > :first-child,
+.workshop-body > div > :first-child {
+  margin-top: 0;
+}
+
+.workshop-body p {
+  color: var(--wp-text);
+}
+
+.workshop-body strong {
+  color: var(--wp-heading);
+  font-weight: 650;
+}
+
+.workshop-body a {
+  color: var(--wp-accent);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.workshop-body a:hover {
+  border-bottom-color: currentColor;
+}
+
+.workshop-body ul,
+.workshop-body ol {
+  padding-left: 1.35rem;
+}
+
+.workshop-body li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.workshop-body li::marker {
+  color: var(--wp-text-muted);
+}
+
+.workshop-body hr {
+  border: none;
+  border-top: 1px solid var(--wp-border);
+  margin: 2rem 0;
+  opacity: 1;
+}
+
+.workshop-body img {
+  max-width: 100%;
+  border-radius: 10px;
+}
+
+.workshop-body h1,
+.workshop-body h2,
+.workshop-body h3,
+.workshop-body h4 {
+  color: var(--wp-heading);
+  border: none;
+  padding-bottom: 0;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.workshop-body h1 { font-size: 30px; font-weight: 750; margin: 4px 0 20px; }
+.workshop-body h2 { font-size: 22px; font-weight: 700; margin: 36px 0 14px; }
+.workshop-body h3 { font-size: 18px; font-weight: 700; margin: 28px 0 12px; }
+.workshop-body h4 { font-size: 16px; font-weight: 700; margin: 24px 0 10px; }
+
+.workshop-body :not(pre) > code {
+  background: var(--wp-code-inline-bg);
+  color: var(--wp-code-inline-text);
+  font-size: 0.86em;
+  font-weight: 500;
+  padding: 0.14em 0.42em;
+  border-radius: 6px;
+}
+
+.workshop-body blockquote {
+  margin: 1.25rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--wp-accent);
+  background: var(--wp-surface);
+  border-radius: 0 8px 8px 0;
+  color: var(--wp-text-muted);
+}
+
+.workshop-body blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* GitHub alerts (> [!NOTE], [!IMPORTANT]…): the simspace quote card, with the alert's colour */
+.workshop-body .markdown-alert {
+  --alert: var(--wp-alert-note);
+  margin: 1.25rem 0;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-left: 3px solid var(--alert);
+  background: var(--wp-surface);
+  border-radius: 0 8px 8px 0;
+  color: var(--wp-text);
+}
+
+.workshop-body .markdown-alert-tip { --alert: var(--wp-alert-tip); }
+.workshop-body .markdown-alert-important { --alert: var(--wp-alert-important); }
+.workshop-body .markdown-alert-warning { --alert: var(--wp-alert-warning); }
+.workshop-body .markdown-alert-caution { --alert: var(--wp-alert-caution); }
+
+.workshop-body .markdown-alert > :last-child {
+  margin-bottom: 0;
+}
+
+.workshop-body .markdown-alert .markdown-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--alert);
+}
+
+.workshop-body .markdown-alert .markdown-alert-title svg {
+  fill: currentColor;
+}
+
+/* Tables */
+.workshop-body table {
+  font-size: 0.95em;
+}
+
+/* Code blocks: the dark card of simspace */
+.workshop-body .code-block {
+  margin: 1.15rem 0;
+  border-radius: 12px !important;
+  overflow: hidden;
+  background: #14181f !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.7);
+}
+
+.workshop-body .code-block > div:first-child,
+.workshop-body .code-block pre,
+.workshop-body .code-block code {
+  background: transparent !important;
+}
+
+.workshop-body .code-block > div:first-child {
+  margin: 0 !important;
+  padding: 0.7rem 0.95rem !important;
+  font-size: 0.82rem;
+}
+
+.workshop-body .code-block .button-container {
+  padding-right: 0.4rem;
+}
+
+.workshop-body .code-block .button-container button {
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.workshop-body .code-block .button-container button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ footer navigation */
+
+#workshop-footer {
+  background: var(--wp-bg) !important;
+  border-top: 1px solid var(--wp-border) !important;
+  padding: 12px 20px !important;
+}
+
+#workshop-footer .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 9px;
+}
+
+#workshop-footer .btn-outline-secondary {
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+  background: transparent;
+}
+
+#workshop-footer .btn-outline-secondary:hover {
+  background: var(--wp-surface);
+  border-color: var(--wp-text-muted);
+  color: var(--wp-text);
+}
+
+#workshop-footer .btn-primary {
+  background: var(--wp-accent);
+  border-color: var(--wp-accent);
+  box-shadow: 0 6px 14px -6px var(--wp-accent);
+}
+
+#workshop-footer .material-symbols-outlined {
+  font-size: 16px;
+}
