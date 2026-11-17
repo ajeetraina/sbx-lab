@@ -107,9 +107,6 @@ preview panel instead of VS Code), writes the sections as JSON files, and adds a
 
 ## Known limitations
 
-- **Links between modules** inside the text (`see [Kits](02-kits.md)`) open the raw Markdown in a new browser tab;
-  use the section picker or the **Previous**/**Next** buttons instead. The Labspace interface opens every link in a new
-  tab.
 - **No IDE**: "open file" links do nothing. Use your own editor on the repository.
 - **Linux**: node-pty has no prebuilt binary for Linux, so `npm install` compiles it, which needs `python3`, `make`
   and a C++ compiler, and recent npm versions may ask you to approve its install script.
