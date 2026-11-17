@@ -64,7 +64,7 @@
       const tabEl = document.createElement("button");
       tabEl.className = "tab";
       tabEl.innerHTML = `${TERMINAL_ICON}<span></span><span class="x" title="Close">×</span>`;
-      tabEl.querySelector("span").textContent = id === "labspace" ? "Terminal" : id;
+      tabEl.querySelector("span").textContent = /^terminal-\d+$/.test(id) ? `Terminal ${id.split("-")[1]}` : id;
       tabEl.onclick = (e) => {
         if (e.target.classList.contains("x")) sendMsg({ t: "close", id });
         else focusTab(id);
