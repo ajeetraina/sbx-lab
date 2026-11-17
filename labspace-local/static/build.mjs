@@ -116,7 +116,13 @@ fs.writeFileSync(
   JSON.stringify(uiConfig(fs.readFileSync(path.join(instructionsDir, "labspace.yaml"), "utf8"), parse)),
 );
 fs.writeFileSync(indexFile, withTheme(fs.readFileSync(indexFile, "utf8"), base));
-// GitHub Pages serves 404.html for unknown paths: deep links to a section still load the app
+// Deep links to a section (<base><section>) load the app: a page per section, which works in a
+// sub-folder of a site too, where GitHub Pages only uses the site's own 404.html; and 404.html for
+// a site of its own.
+for (const section of sections) {
+  fs.mkdirSync(path.join(out, section.id), { recursive: true });
+  fs.copyFileSync(indexFile, path.join(out, section.id, "index.html"));
+}
 fs.copyFileSync(indexFile, path.join(out, "404.html"));
 fs.writeFileSync(path.join(out, ".nojekyll"), "");
 
