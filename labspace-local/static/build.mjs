@@ -15,6 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { stripFooter } from "../content.mjs";
 
 const LABSPACE_INFRA = "https://github.com/dockersamples/labspace-infra.git";
 const LABSPACE_INFRA_COMMIT = "83f3c262cb68dfcf0d8b77066565fdb20d7ef2b1";
@@ -82,7 +83,7 @@ const config = parse(fs.readFileSync(path.join(instructionsDir, "labspace.yaml")
 const sections = config.sections.map((section) => ({
   id: slug(section.title),
   title: section.title,
-  content: fs.readFileSync(path.join(instructionsDir, section.contentPath), "utf8"),
+  content: stripFooter(fs.readFileSync(path.join(instructionsDir, section.contentPath), "utf8")),
 }));
 const services = (config.services || []).map((s) => ({ id: s.id || slug(s.title), title: s.title, icon: s.icon, url: s.url }));
 
