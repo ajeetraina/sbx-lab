@@ -29,7 +29,7 @@ One lab, [`labs/docker-sandboxes-copilot/`](labs/docker-sandboxes-copilot), with
 - **Outputs are modelled, not captured.** They follow the hands-on lab's text and are abridged in places (a real `sbx` may format `policy ls`, `policy log`, `ls` or the kit inspector differently). Treat them as illustrative.
 - **Agent sessions end with `/exit`** (in the real lab: Ctrl-C twice), and the agent only answers the lab's prompts. Inside a session, `!command` still runs a host command.
 - **`curl` replaces the browser** in the port forwarding module.
-- **Confirmations and pickers** are skipped (`sbx rm`, `sbx policy rm`); plain `sbx policy reset` auto-selects Locked Down.
+- **Confirmations and pickers** are answered for you: `sbx policy rm` shows its question answered `y`, `sbx rm` skips it, and plain `sbx policy reset` auto-selects Locked Down.
 - **Four terminals share one machine**, like the several terminals the real lab asks for. A `cd` in one applies to all.
 
 ## Author locally

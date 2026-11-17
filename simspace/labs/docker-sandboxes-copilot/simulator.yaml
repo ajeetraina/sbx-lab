@@ -428,7 +428,7 @@ scenarios:
         - "    Allowed:     docker.com:443"
         - "    Governance:  Local policy only"
         - "    Context:     global"
-        - "    Rule:        e3246d5b-cb8e-42d5-879d-45efeb4b2a4a"
+        - "    Rule:        f652c735-f8f6-4a6b-9b9e-51ebc6d52545"
 
   - id: policy-check-docker-denied
     completes: check-denied
@@ -454,7 +454,7 @@ scenarios:
         - "    Allowed:     api.github.com:443"
         - "    Governance:  Local policy only"
         - "    Context:     global"
-        - "    Rule:        d8f47e3e-127e-4482-beae-962d8e5d5e16"
+        - "    Rule:        c2185734-ea42-4f5d-b083-a2266ca721a5"
 
   - id: policy-check-copilot
     when:
@@ -467,7 +467,7 @@ scenarios:
         - "    Allowed:     api.individual.githubcopilot.com:443"
         - "    Governance:  Local policy only"
         - "    Context:     global"
-        - "    Rule:        0dc17953-5c26-4303-b203-31952255d03d"
+        - "    Rule:        b9b155c9-49aa-4131-96b1-bc2d7e2ac1b1"
 
   - id: policy-check-any
     when:
@@ -490,7 +490,8 @@ scenarios:
         0: "docker.com"
     then:
       state: { policy.dockerAllowed: true }
-      output: ["✓ Added allow rule: docker.com"]
+      output:
+        - "  Added rule f652c735-f8f6-4a6b-9b9e-51ebc6d52545 to policy local (scope: global): docker.com [tcp]"
 
   - id: policy-allow-github
     completes: allow-github
@@ -501,9 +502,9 @@ scenarios:
     then:
       state: { rules.github: true }
       output:
-        - "✓ Added allow rule: github.com"
-        - "✓ Added allow rule: **.github.com"
-        - "✓ Added allow rule: **.githubcopilot.com"
+        - "  Added rule dda4bd8b-3f33-4d3b-97a8-b19796285f2c to policy local (scope: global): github.com [tcp]"
+        - "  Added rule c2185734-ea42-4f5d-b083-a2266ca721a5 to policy local (scope: global): **.github.com [tcp]"
+        - "  Added rule b9b155c9-49aa-4131-96b1-bc2d7e2ac1b1 to policy local (scope: global): **.githubcopilot.com [tcp]"
 
   - id: policy-allow-python
     completes: allow-python
@@ -514,10 +515,10 @@ scenarios:
     then:
       state: { rules.python: true }
       output:
-        - "✓ Added allow rule: deb.debian.org"
-        - "✓ Added allow rule: dhi.io"
-        - "✓ Added allow rule: pypi.org"
-        - "✓ Added allow rule: files.pythonhosted.org"
+        - "  Added rule ddbffc51-658f-4440-9b21-04fe6d64e05c to policy local (scope: global): deb.debian.org [tcp]"
+        - "  Added rule 65162871-96bf-4d91-ac62-13790f32214d to policy local (scope: global): dhi.io [tcp]"
+        - "  Added rule 49133bd8-43e7-4195-bb9e-59294b13a0df to policy local (scope: global): pypi.org [tcp]"
+        - "  Added rule 5e799db9-4b4a-4ea0-9a46-912847ccb08c to policy local (scope: global): files.pythonhosted.org [tcp]"
 
   - id: policy-allow-docker-hub
     completes: allow-docker-hub
@@ -528,8 +529,8 @@ scenarios:
     then:
       state: { rules.dockerhub: true }
       output:
-        - "✓ Added allow rule: **.docker.io"
-        - "✓ Added allow rule: production.cloudfront.docker.com"
+        - "  Added rule 0f8cabf0-64bd-4c9d-aee6-d5d18d205f8f to policy local (scope: global): **.docker.io [tcp]"
+        - "  Added rule e09d8452-9f1f-49a9-a8ed-09bf90606714 to policy local (scope: global): production.cloudfront.docker.com [tcp]"
 
   - id: policy-allow-npm
     completes: allow-npm
@@ -539,7 +540,8 @@ scenarios:
         0: "registry.npmjs.org"
     then:
       state: { rules.npm: true }
-      output: ["✓ Added allow rule: registry.npmjs.org"]
+      output:
+        - "  Added rule 9f487778-51f3-45e9-b154-0a75b3118ff3 to policy local (scope: global): registry.npmjs.org [tcp]"
 
   - id: policy-allow-any
     when:
@@ -547,7 +549,8 @@ scenarios:
       args:
         0: { any: true }
     then:
-      output: ["✓ Added allow rule: {{ args.0 }}"]
+      output:
+        - "  Added rule 00adf6c6-bb88-40db-9bb3-c02e5578c665 to policy local (scope: global): {{ args.0 }} [tcp]"
 
   - id: policy-deny-any
     when:
@@ -556,9 +559,10 @@ scenarios:
         0: { any: true }
     then:
       state: { policy.adsDenied: true }
-      output: ["✓ Added deny rule: {{ args.0 }}"]
+      output:
+        - "  Added rule 25ef9968-9e47-4a60-a2ba-febeb9bf6dc2 to policy local (scope: global): {{ args.0 }} [tcp,udp]"
 
-  # Note: the real command asks for confirmation; the simulation doesn't.
+  # The real command asks for confirmation: the simulation shows the question, answered y.
   - id: policy-rm-docker
     completes: remove-rules
     when:
@@ -567,7 +571,10 @@ scenarios:
         --resource: "docker.com"
     then:
       state: { policy.dockerAllowed: false }
-      output: ["✓ Removed rule for docker.com"]
+      output:
+        - "  Remove network rules from global (resources=docker.com)? (y/N) y"
+        - ""
+        - "  Removed rule from policy local: resources=docker.com"
 
   - id: policy-rm-ads
     completes: remove-rules
@@ -577,7 +584,10 @@ scenarios:
         --resource: "ads.example.com"
     then:
       state: { policy.adsDenied: false }
-      output: ["✓ Removed rule for ads.example.com"]
+      output:
+        - "  Remove network rules from global (resources=ads.example.com)? (y/N) y"
+        - ""
+        - "  Removed rule from policy local: resources=ads.example.com"
 
   - id: policy-rm-any
     when:
@@ -585,7 +595,10 @@ scenarios:
       args:
         --resource: { any: true }
     then:
-      output: ["✓ Removed rule for {{ args.resource }}"]
+      output:
+        - "  Remove network rules from global (resources={{ args.resource }})? (y/N) y"
+        - ""
+        - "  Removed rule from policy local: resources={{ args.resource }}"
 
   # sbx policy log: one table per sandbox, abridged to the columns the lab needs.
   - id: policy-log-quickstart-paste
